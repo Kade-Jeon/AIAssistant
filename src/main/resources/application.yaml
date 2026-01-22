@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: AIAssistant
+  profiles:
+    active: dev
+  server:
+    port: 8080
+
+  # Ollama
+  ai:
+    ollama:
+      base-url: http://192.168.200.166:11434
+      chat:
+        model: qwen2.5:1.5b
+  # Langfuse
+  chat:
+    observations:
+      log-prompt: false      # 프롬프트 내용 로깅 (개인정보 주의)
+      log-completion: false  # 응답 내용 로깅
+
+# OpenTelemetry 설정 (Langfuse는 Traces만 수집하므로 Logs/Metrics 전송 비활성화)
+otel:
+  resource:
+    attributes:
+      deployment.environment: ${spring.profiles.active:default}
+      service.name: ${spring.application.name}
+  logs:
+    exporter: none
+  metrics:
+    exporter: none
+  traces:
+    exporter: otlp
+
+# 관리용 엔드포인트 설정
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # 100% 트레이싱 샘플링 (운영 환경에서는 조절 필요)
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,caches  # 캐시 관련 엔드포인트 포함
+  endpoint:
+    caches:
+      enabled: true  # 캐시 상태 확인 엔드포인트 활성화
+
+# 로깅
+logging:
+  level:
+    com.crinity.ai: INFO
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+langfuse:
+  public-key: ${LANGFUSE_PUBLIC_KEY}
+  secret-key: ${LANGFUSE_SECRET_KEY}

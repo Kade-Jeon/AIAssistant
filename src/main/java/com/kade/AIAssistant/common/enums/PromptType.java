@@ -1,0 +1,24 @@
+package com.kade.AIAssistant.common.enums;
+
+import com.kade.AIAssistant.constants.PromptVariables;
+import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
+import java.util.HashMap;
+import java.util.Map;
+
+public enum PromptType {
+    TRANSLATE {
+        @Override
+        public Map<String, Object> formatVariable(AssistantRequest contents) {
+            Map<String, Object> map = new HashMap<>();
+            if (contents.language() != null) {
+                map.put(PromptVariables.LANGUAGE, Language.toKoreanName(contents.language()));
+            }
+            return map;
+        }
+    };
+
+    /**
+     * SystemTemplate의 문자열을 치환할 수 있도록, Map을 반환합니다. (Spring AI 권장 방법 활용)
+     */
+    public abstract Map<String, Object> formatVariable(AssistantRequest contents);
+}

@@ -1,0 +1,76 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.9'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.kade'
+version = '0.0.1-SNAPSHOT'
+description = 'AI Assistant App'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springAiVersion', "1.1.2")
+    set('tomcat.version', "10.1.49")
+    set('openTelemetryVersion', "2.17.0")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Ollama
+    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+
+    // Vector DB
+    //implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+    //implementation 'org.springframework.ai:spring-ai-starter-vector-store-milvus'
+
+    // Document Reader
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'
+    implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
+
+    // Langfuse 관련 설정
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+    implementation 'io.projectreactor:reactor-core'
+    implementation 'io.projectreactor:reactor-core-micrometer'
+    implementation 'io.micrometer:micrometer-observation'
+
+
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'io.micrometer:micrometer-registry-otlp'
+
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+        mavenBom "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
