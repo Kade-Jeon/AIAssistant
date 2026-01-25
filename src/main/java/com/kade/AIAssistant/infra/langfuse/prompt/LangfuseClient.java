@@ -28,7 +28,7 @@ public class LangfuseClient {
     }
 
     public LangfusePromptTemplate getPrompt(PromptType promptType) {
-        // API 경로는 보통 /api/public/prompts/{name} 입니다.
+        // API 경로는 보통 /api/public/v2/prompts/{name} 입니다.
         String url = baseUrl + "/api/public/v2/prompts/" + promptType.name();
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);

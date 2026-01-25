@@ -65,8 +65,8 @@ public class LangfuseUserTrackingFilter extends OncePerRequestFilter {
 
         //TODO : 추후 변경
         // 2. 값 결정 (기존 하드코딩 로직 유지 및 헤더 값 적용)
-        String finalUserId = "gbdc_co_kr:208"; // 기존 하드코딩 값
-        String finalSessionId = StringUtils.hasText(sessionId) ? sessionId : "thisISsession8";
+        String finalUserId = "kade.com:9013"; // 기존 하드코딩 값
+        String finalSessionId = StringUtils.hasText(sessionId) ? sessionId : "testSession1";
         String finalEnvironment = "dev";
         //String finalEnvironment = StringUtils.hasText(environmentName) ? environmentName : null;
 
@@ -79,7 +79,7 @@ public class LangfuseUserTrackingFilter extends OncePerRequestFilter {
             baggageBuilder.put("langfuse.trace.tags", "tenant=" + tenant);
             baggageBuilder.put("langfuse.tenant.id", tenant);
         } else {
-            baggageBuilder.put("langfuse.trace.tags", "gbdc_co_kr");
+            baggageBuilder.put("langfuse.trace.tags", "kade.com");
         }
 
         if (finalEnvironment != null) {
