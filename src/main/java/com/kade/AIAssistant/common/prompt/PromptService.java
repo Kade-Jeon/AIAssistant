@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.prompt;
+package com.kade.AIAssistant.common.prompt;
 
 import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;

@@ -11,6 +11,14 @@ spring:
     virtual:
       enabled: true
 
+  # 프롬프트 / 대화 캐싱 Redis 서버
+  data:
+    redis:
+      host: localhost
+      port: 6389
+  #      username: default
+  #      password: crinity21!
+
   # Ollama
   ai:
     ollama:

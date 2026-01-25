@@ -1,6 +1,6 @@
 package com.kade.AIAssistant.common.enums;
 
-import com.kade.AIAssistant.constants.PromptVariables;
+import com.kade.AIAssistant.common.constants.PromptVariables;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import java.util.HashMap;
 import java.util.Map;

@@ -38,6 +38,9 @@ dependencies {
     // Ollama
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // Vector DB
     //implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
     //implementation 'org.springframework.ai:spring-ai-starter-vector-store-milvus'

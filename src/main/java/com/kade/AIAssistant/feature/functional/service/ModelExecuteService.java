@@ -1,9 +1,9 @@
 package com.kade.AIAssistant.feature.functional.service;
 
+import com.kade.AIAssistant.common.prompt.PromptService;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.ollama.factory.OllamaChatModelFactory;
-import com.kade.AIAssistant.prompt.PromptService;
 import io.opentelemetry.api.trace.Span;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

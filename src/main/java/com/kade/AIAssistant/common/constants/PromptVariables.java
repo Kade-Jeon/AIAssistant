@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.constants;
+package com.kade.AIAssistant.common.constants;
 
 public final class PromptVariables {
 
