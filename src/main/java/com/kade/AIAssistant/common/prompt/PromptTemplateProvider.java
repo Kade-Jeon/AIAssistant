@@ -22,7 +22,6 @@ public class PromptTemplateProvider {
     private final RedisService redisService;
     private final LangfuseClient langfuseClient;
     private final ObjectMapper objectMapper;
-    private final String TEMPLATE_DIR = "templates";
 
 
     public LangfusePromptTemplate getSystemPromptTemplate(PromptType promptType) {

@@ -15,6 +15,13 @@ public enum PromptType {
             }
             return map;
         }
+    },
+
+    CONVERSATION {
+        @Override
+        public Map<String, Object> formatVariable(AssistantRequest contents) {
+            return new HashMap<>();
+        }
     };
 
     /**
