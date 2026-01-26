@@ -14,13 +14,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -48,6 +48,7 @@ public class ConversationService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserConversationRepository userConversationRepository;
     private final RedisChatMemory redisChatMemory;
+    private final UserConversationEnsureService userConversationEnsureService;
 
     /**
      * [SSE 스트리밍] AI 채팅 응답 생성. conversationId가 비어 있으면 UUID로 새로 생성해 DB에 등록하고, 그 id로 대화를 이어간다.
@@ -64,7 +65,7 @@ public class ConversationService {
 
         if (isNewConversation) {
             String subject = resolveSubjectForNew(request);
-            ensureUserConversation(userId, conversationId, subject);
+            userConversationEnsureService.ensure(userId, conversationId, subject);
             try {
                 emitter.send(SseEmitter.event()
                         .name("conversation_created")
@@ -73,7 +74,7 @@ public class ConversationService {
                 log.warn("conversation_created 이벤트 전송 실패", e);
             }
         } else {
-            ensureUserConversation(userId, conversationId, "(제목 없음)"); // 기존 대화는 저장 스킵 시 사용 안 함
+            userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)"); // 기존 대화는 저장 스킵 시 사용 안 함
         }
 
         AssistantRequest requestToUse = isNewConversation
@@ -107,20 +108,10 @@ public class ConversationService {
     }
 
     /**
-     * (userId, conversationId, subject) 매핑이 없으면 등록. 이미 있으면 subject는 갱신하지 않는다.
-     */
-    private void ensureUserConversation(String userId, String conversationId, String subject) {
-        if (userConversationRepository.existsById_UserIdAndId_ConversationId(userId, conversationId)) {
-            return;
-        }
-        userConversationRepository.save(new UserConversationEntity(userId, conversationId, subject));
-    }
-
-    /**
      * 특정 유저의 모든 대화 목록(conversationId, subject)을 최신순으로 반환.
      */
     public List<UserConversationItemDto> getConversations(String userId) {
-        List<UserConversationEntity> list = userConversationRepository.findById_UserIdOrderByCreatedAtDesc(
+        List<UserConversationEntity> list = userConversationRepository.findById_UserIdOrderByUpdatedAtDesc(
                 userId, PageRequest.of(0, 500));
         return list.stream()
                 .map(e -> new UserConversationItemDto(e.getId().getConversationId(), e.getSubject()))

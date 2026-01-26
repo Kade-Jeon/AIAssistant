@@ -3,6 +3,7 @@ package com.kade.AIAssistant.feature.conversation.repository;
 import com.kade.AIAssistant.feature.conversation.entity.UserConversationEntity;
 import com.kade.AIAssistant.feature.conversation.entity.UserConversationId;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,5 +14,9 @@ public interface UserConversationRepository extends JpaRepository<UserConversati
 
     boolean existsById_UserIdAndId_ConversationId(String userId, String conversationId);
 
+    Optional<UserConversationEntity> findById_UserIdAndId_ConversationId(String userId, String conversationId);
+
     List<UserConversationEntity> findById_UserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+
+    List<UserConversationEntity> findById_UserIdOrderByUpdatedAtDesc(String userId, Pageable pageable);
 }
