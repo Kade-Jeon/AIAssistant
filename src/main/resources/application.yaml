@@ -6,6 +6,11 @@ spring:
   server:
     port: 8080
 
+  # DatabaseDriver 오류 회피: JDBC Chat Memory 스키마 자동 초기화 비활성화 → schema.sql로 대체
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.chat.memory.repository.jdbc.autoconfigure.JdbcChatMemoryRepositoryAutoConfiguration
+
   # Virtual Thread 설정
   threads:
     virtual:
@@ -19,12 +24,30 @@ spring:
   #      username: default
   #      password: crinity21!
 
+  # RDB (채팅 메모리 영구 저장)
+  datasource:
+    url: jdbc:postgresql://localhost:54321/aichat
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # schema.sql로 SPRING_AI_CHAT_MEMORY 테이블 생성 (JdbcChatMemoryRepository auto-config 제외 시 필요)
+  sql:
+    init:
+      mode: always
+
   # Ollama
   ai:
     ollama:
       base-url: http://192.168.200.166:11434
       chat:
         model: qwen2.5:1.5b
+    # JDBC Chat Memory: 스키마는 schema.sql로 직접 초기화 (auto-config 제외로 DatabaseDriver 오류 회피)
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never
   # Langfuse
   chat:
     observations:
@@ -35,6 +58,8 @@ spring:
 app:
   sse:
     timeout: 300000  # 기본값: 5분 (밀리초)
+  subject-generation:
+    timeout-seconds: 30  # 제목 생성 AI 호출 타임아웃(초), 초과 시 질문 앞 36자 사용
 
 # OpenTelemetry 설정 (Langfuse는 Traces만 수집하므로 Logs/Metrics 전송 비활성화)
 otel:

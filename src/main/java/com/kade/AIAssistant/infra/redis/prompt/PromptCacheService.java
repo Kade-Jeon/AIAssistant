@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.infra.redis;
+package com.kade.AIAssistant.infra.redis.prompt;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RedisService {
+public class PromptCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 

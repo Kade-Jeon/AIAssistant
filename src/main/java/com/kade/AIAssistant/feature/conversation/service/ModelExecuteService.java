@@ -1,14 +1,19 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
+import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.common.prompt.PromptService;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.ollama.factory.OllamaChatModelFactory;
 import io.opentelemetry.api.trace.Span;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -17,6 +22,7 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
 @Service
@@ -28,8 +34,12 @@ public class ModelExecuteService {
     @Value("${spring.ai.ollama.chat.model:default}")
     private String MODEL_NAME;
 
+    @Value("${app.subject-generation.timeout-seconds:30}")
+    private int subjectGenerationTimeoutSeconds;
+
     private final PromptService promptService;
     private final OllamaChatModelFactory chatModelFactory;
+    private final ChatMemory chatMemory;
 
     /**
      * AI 모델 스트리밍 생성 - ChatClient 고수준 API 사용
@@ -55,13 +65,65 @@ public class ModelExecuteService {
         // 기존 팩토리로 ChatModel 생성 (기본 옵션 포함)
         OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, request.promptType(), options);
 
-        // ChatClient로 스트리밍 (Flux<ChatResponse>)
-        ChatClient chatClient = ChatClient.create(chatModel);
+        // ChatClient + MessageChatMemoryAdvisor (대화 기록 로드/저장)
+        ChatClient chatClient = ChatClient.builder(chatModel)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .build();
+
+        String conversationId = StringUtils.hasText(request.conversationId())
+                ? request.conversationId()
+                : ChatMemory.DEFAULT_CONVERSATION_ID;
 
         return chatClient
                 .prompt(prompt)
                 .options(options)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
                 .chatResponse();
+    }
+
+    /**
+     * 첫 요청 내용(질문)을 요약해 대화 제목으로 쓸 문자열을 생성한다. 동기 호출. Langfuse의 PromptType.SUBJECT 프롬프트 템플릿을 사용한다.
+     *
+     * @param question 사용자 질문(첫 메시지)
+     * @return 요약 제목, 실패 시 질문 앞 200자
+     */
+    public String generateConversationSubject(String question) {
+        if (!StringUtils.hasText(question)) {
+            return "(제목 없음)";
+        }
+        try {
+            // Langfuse 또는 Redis 에서 프롬프트 템플릿 가져옴
+            LangfusePromptTemplate langfusePromptTemplate = promptService.getLangfusePrompt(PromptType.SUBJECT);
+
+            AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null, null);
+            // 시스템 프롬프트 생성
+            Message systemPrompt = promptService.getSystemPrompt(langfusePromptTemplate, subRequest);
+            // 옵션
+            OllamaChatOptions options = langfusePromptTemplate.getOllamaChatOptions(MODEL_NAME);
+            // 유저 프롬프트
+            Message userPrompt = UserMessage.builder().text(question).build();
+
+            Prompt prompt = new Prompt(List.of(systemPrompt, userPrompt));
+            OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, PromptType.SUBJECT, options);
+
+            // ChatClient로 동기 호출(stream과 동일한 경로) + 타임아웃으로 무한 대기 방지
+            ChatClient chatClient = ChatClient.builder(chatModel).build();
+            ChatResponse response = CompletableFuture
+                    .supplyAsync(() -> chatClient.prompt(prompt).options(options).call().chatResponse())
+                    .orTimeout(subjectGenerationTimeoutSeconds, TimeUnit.SECONDS)
+                    .join();
+
+            if (response != null && response.getResult() != null && response.getResult().getOutput() != null) {
+                String content = response.getResult().getOutput().getText();
+                if (StringUtils.hasText(content)) {
+                    String trimmed = content.trim();
+                    return trimmed.length() > 36 ? trimmed.substring(0, 36) : trimmed;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("제목 생성 실패, 질문 앞부분 사용: {}", e.getMessage());
+        }
+        return question.length() > 36 ? question.substring(0, 36) : question;
     }
 }

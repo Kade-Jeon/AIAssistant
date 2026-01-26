@@ -1,6 +1,7 @@
 package com.kade.AIAssistant.common.exceptions;
 
 import com.kade.AIAssistant.common.exceptions.customs.AiModelException;
+import com.kade.AIAssistant.common.exceptions.customs.ForbiddenException;
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.common.exceptions.customs.ModelNotFoundException;
 import com.kade.AIAssistant.common.exceptions.customs.PromptNotFoundException;
@@ -90,6 +91,29 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+
+    /**
+     * 접근 권한 없음 (403)
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(
+            ForbiddenException e,
+            HttpServletRequest request) {
+
+        log.warn("접근 거부: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                e.getErrorCode(),
+                e.getMessage(),
+                null,
+                request.getRequestURI(),
+                HttpStatus.FORBIDDEN.value()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(errorResponse);
+    }
 
     /**
      * 잘못된 요청 처리

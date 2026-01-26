@@ -63,12 +63,10 @@ public class LangfuseUserTrackingFilter extends OncePerRequestFilter {
                 request.getHeader(HDR_TENANT)
         );
 
-        //TODO : 추후 변경
-        // 2. 값 결정 (기존 하드코딩 로직 유지 및 헤더 값 적용)
-        String finalUserId = "kade.com:9013"; // 기존 하드코딩 값
-        String finalSessionId = StringUtils.hasText(sessionId) ? sessionId : "testSession1";
-        String finalEnvironment = "dev";
-        //String finalEnvironment = StringUtils.hasText(environmentName) ? environmentName : null;
+        // 2. 값 결정 (헤더 값 우선 사용, 없으면 기본값)
+        String finalUserId = StringUtils.hasText(userId) ? userId : "anonymous";
+        String finalSessionId = StringUtils.hasText(sessionId) ? sessionId : generateDefaultSessionId();
+        String finalEnvironment = StringUtils.hasText(environmentName) ? environmentName : "dev";
 
         // Baggage 설정 (Context Propagation용 - LangfuseBaggageSpanProcessor에서 사용)
         BaggageBuilder baggageBuilder = Baggage.builder();
@@ -104,5 +102,9 @@ public class LangfuseUserTrackingFilter extends OncePerRequestFilter {
             }
         }
         return null;
+    }
+
+    private static String generateDefaultSessionId() {
+        return "session-" + System.currentTimeMillis();
     }
 }

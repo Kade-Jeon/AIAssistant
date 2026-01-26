@@ -20,7 +20,14 @@ public enum PromptType {
     CONVERSATION {
         @Override
         public Map<String, Object> formatVariable(AssistantRequest contents) {
-            return new HashMap<>();
+            return Map.of();
+        }
+    },
+
+    SUBJECT {
+        @Override
+        public Map<String, Object> formatVariable(AssistantRequest contents) {
+            return Map.of();
         }
     };
 

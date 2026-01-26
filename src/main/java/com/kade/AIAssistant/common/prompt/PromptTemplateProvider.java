@@ -5,8 +5,8 @@ import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.common.exceptions.customs.PromptNotFoundException;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfuseClient;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
-import com.kade.AIAssistant.infra.redis.RedisService;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;
+import com.kade.AIAssistant.infra.redis.prompt.PromptCacheService;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PromptTemplateProvider {
 
-    private final RedisService redisService;
+    private final PromptCacheService promptCacheService;
     private final LangfuseClient langfuseClient;
     private final ObjectMapper objectMapper;
 
@@ -31,7 +31,7 @@ public class PromptTemplateProvider {
 
         try {
             // 1. Redis에서 캐시 조회
-            Optional<Object> cachedData = redisService.get(cacheKey);
+            Optional<Object> cachedData = promptCacheService.get(cacheKey);
 
             LangfusePromptTemplate langfusePromptTemplate;
             if (cachedData.isPresent()) {
@@ -46,7 +46,7 @@ public class PromptTemplateProvider {
 
                 // JSON으로 직렬화해서 Redis에 저장
                 String jsonData = objectMapper.writeValueAsString(langfusePromptTemplate);
-                redisService.set(cacheKey, jsonData, Duration.ofHours(1L));
+                promptCacheService.set(cacheKey, jsonData, Duration.ofHours(1L));
                 log.info("[PromptTemplateProvider] Redis 캐시 저장 완료: {}", promptType.name());
             }
             return langfusePromptTemplate;
