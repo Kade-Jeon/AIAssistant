@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.feature.functional.service;
+package com.kade.AIAssistant.feature.conversation.service;
 
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
@@ -16,7 +16,7 @@ import reactor.core.publisher.Flux;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FunctionalService {
+public class ConversationService {
 
     @Value("${spring.ai.ollama.chat.model:default}")
     private String MODEL_NAME;

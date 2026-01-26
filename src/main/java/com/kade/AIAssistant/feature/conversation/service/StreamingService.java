@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.feature.functional.service;
+package com.kade.AIAssistant.feature.conversation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.utils.StreamingChunkProcessor;

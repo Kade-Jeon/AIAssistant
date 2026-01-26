@@ -31,6 +31,11 @@ spring:
       log-prompt: false      # 프롬프트 내용 로깅 (개인정보 주의)
       log-completion: false  # 응답 내용 로깅
 
+# 기본 애플리케이션 설정
+app:
+  sse:
+    timeout: 300000  # 기본값: 5분 (밀리초)
+
 # OpenTelemetry 설정 (Langfuse는 Traces만 수집하므로 Logs/Metrics 전송 비활성화)
 otel:
   resource:

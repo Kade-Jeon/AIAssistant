@@ -48,6 +48,7 @@ dependencies {
     // Document Reader
     implementation 'org.springframework.ai:spring-ai-tika-document-reader'
     implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
+    implementation 'kr.dogfoot:hwplib:1.1.10' // hwp 파일 지원, hwpx 관련 오류시 'kr.dogfoot:hwpxlib:1.0.7' 로 처리
 
     // Langfuse 관련 설정
     implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'

@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.feature.functional.service;
+package com.kade.AIAssistant.domain.response;
 
 public record UsageInfo(
         Integer promptTokens,

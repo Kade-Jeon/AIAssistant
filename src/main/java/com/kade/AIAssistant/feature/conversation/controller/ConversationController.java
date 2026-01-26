@@ -1,0 +1,114 @@
+package com.kade.AIAssistant.feature.conversation.controller;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
+import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
+import com.kade.AIAssistant.feature.conversation.service.ConversationService;
+import com.kade.AIAssistant.feature.conversation.service.RagService;
+import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+/**
+ * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다.
+ */
+@Slf4j
+@RequiredArgsConstructor
+@RestController
+@RequestMapping("/api/v1/ai/conv")
+public class ConversationController {
+
+    private final ConversationService conversationService;
+    private final RagService ragService;
+    private final ObjectMapper objectMapper;
+
+    @Value("${app.sse.timeout:300000}")
+    private long SSE_TIMEOUT;
+
+    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public SseEmitter conversationStream(@RequestBody @Valid AssistantRequest request) {
+        log.info("""
+                        [SSE 스트리밍 채팅 요청] 프롬프트 타입: {}
+                        질문: {},\s
+                        """,
+                request.promptType(), request.question());
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
+
+        try {
+            emitter.send(SseEmitter.event().name("open").data("connected"));
+            conversationService.streamToSse(request, emitter);
+        } catch (Exception e) {
+            log.error("SSE 스트리밍 초기화 실패", e);
+            emitter.completeWithError(e);
+        }
+
+        return emitter;
+    }
+
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SseEmitter conversationStreamWithFile(
+            @RequestPart("file") MultipartFile file,
+            @RequestPart("request") String requestJson
+    ) {
+        log.info("""
+                        [SSE 스트리밍 파일 첨부 요청] 파일명: {}
+                        """,
+                file.getOriginalFilename());
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
+
+        try {
+            // JSON 문자열을 AssistantRequest로 변환
+            AssistantRequest request;
+            try {
+                request = objectMapper.readValue(requestJson, AssistantRequest.class);
+            } catch (JsonProcessingException e) {
+                log.error("요청 JSON 파싱 실패", e);
+                emitter.completeWithError(new InvalidRequestException("요청 데이터 형식이 올바르지 않습니다: " + e.getMessage()));
+                return emitter;
+            }
+
+            // 파일 텍스트 추출
+            String fileContent = ragService.extractText(file);
+            log.info("파일 텍스트 추출 완료: 파일명={}, 추출된 텍스트 길이={}",
+                    file.getOriginalFilename(), fileContent.length());
+
+            // 파일 내용과 사용자 질문 결합
+            String combinedQuestion = String.format(
+                    "다음 첨부파일(문서) 내용:\n\n%s\n\n사용자 요청: %s",
+                    fileContent,
+                    request.question()
+            );
+
+            // AssistantRequest 재생성 (question만 변경)
+            AssistantRequest fileRequest = new AssistantRequest(
+                    request.promptType(),
+                    combinedQuestion,
+                    request.language(),
+                    request.targetType(),
+                    request.toneType(),
+                    request.userId(),
+                    request.sessionId(),
+                    request.tenant()
+            );
+
+            emitter.send(SseEmitter.event().name("open").data("connected"));
+            conversationService.streamToSse(fileRequest, emitter);
+
+        } catch (Exception e) {
+            log.error("파일 처리 실패", e);
+            emitter.completeWithError(e);
+        }
+
+        return emitter;
+    }
+}

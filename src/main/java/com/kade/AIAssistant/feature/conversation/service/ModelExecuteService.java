@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.feature.functional.service;
+package com.kade.AIAssistant.feature.conversation.service;
 
 import com.kade.AIAssistant.common.prompt.PromptService;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;

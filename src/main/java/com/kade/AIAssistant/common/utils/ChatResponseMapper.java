@@ -1,7 +1,7 @@
 package com.kade.AIAssistant.common.utils;
 
 import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
-import com.kade.AIAssistant.feature.functional.service.UsageInfo;
+import com.kade.AIAssistant.domain.response.UsageInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
