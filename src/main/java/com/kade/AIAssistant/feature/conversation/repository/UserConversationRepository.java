@@ -16,7 +16,7 @@ public interface UserConversationRepository extends JpaRepository<UserConversati
 
     Optional<UserConversationEntity> findById_UserIdAndId_ConversationId(String userId, String conversationId);
 
-    List<UserConversationEntity> findById_UserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
-
     List<UserConversationEntity> findById_UserIdOrderByUpdatedAtDesc(String userId, Pageable pageable);
+
+    int deleteById_UserIdAndId_ConversationId(String userId, String conversationId);
 }

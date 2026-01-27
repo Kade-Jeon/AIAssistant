@@ -15,7 +15,7 @@ ON SPRING_AI_CHAT_MEMORY(conversation_id, "timestamp");
 CREATE TABLE IF NOT EXISTS USER_CONVERSATION (
     user_id VARCHAR(64) NOT NULL,
     conversation_id VARCHAR(36) NOT NULL,
-    subject VARCHAR(64) NOT NULL,
+    subject VARCHAR(32) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id, conversation_id)

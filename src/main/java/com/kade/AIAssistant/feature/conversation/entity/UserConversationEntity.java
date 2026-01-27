@@ -47,4 +47,9 @@ public class UserConversationEntity {
     public void touch() {
         this.updatedAt = Instant.now();
     }
+
+    /** 제목만 변경. 빈 값이면 "(제목 없음)"으로 넣는다. */
+    public void changeSubject(String subject) {
+        this.subject = (subject != null && !subject.isBlank()) ? subject : "(제목 없음)";
+    }
 }

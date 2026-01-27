@@ -25,6 +25,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
@@ -35,6 +36,7 @@ import reactor.core.publisher.Flux;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ConversationService {
 
     @Value("${spring.ai.ollama.chat.model:default}")
@@ -57,6 +59,7 @@ public class ConversationService {
      * @param request 사용자 요청
      * @param emitter SSE Emitter
      */
+    @Transactional
     public void streamToSse(String userId, AssistantRequest request, SseEmitter emitter) {
         boolean isNewConversation = !StringUtils.hasText(request.conversationId());
         String conversationId = isNewConversation
@@ -157,5 +160,27 @@ public class ConversationService {
             case ASSISTANT -> new AssistantMessage(text);
             default -> new AssistantMessage(text);
         };
+    }
+
+    @Transactional(readOnly = false)
+    public boolean deleteConversation(String userId, String conversationId) {
+        if (userConversationRepository.findById_UserIdAndId_ConversationId(userId, conversationId).isEmpty()) {
+            return false;
+        }
+        chatMessageRepository.deleteById_ConversationId(conversationId);
+        userConversationRepository.deleteById_UserIdAndId_ConversationId(userId, conversationId);
+        return true;
+    }
+
+    /**
+     * 대화 제목 변경. 소유자가 아니면 {@link ForbiddenException} 발생.
+     */
+    @Transactional(readOnly = false)
+    public void changeSubject(String userId, String conversationId, String subject) {
+        UserConversationEntity entity = userConversationRepository
+                .findById_UserIdAndId_ConversationId(userId, conversationId)
+                .orElseThrow(() -> new ForbiddenException("해당 대화에 대한 접근 권한이 없습니다."));
+        entity.changeSubject(subject);
+        userConversationRepository.save(entity);
     }
 }

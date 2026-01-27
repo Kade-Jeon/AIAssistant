@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
+import com.kade.AIAssistant.domain.reqeust.ChangeSubjectRequest;
 import com.kade.AIAssistant.feature.conversation.service.ConversationService;
 import com.kade.AIAssistant.feature.conversation.service.RagService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,14 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,17 +44,13 @@ public class ConversationController {
     @Value("${app.sse.timeout:300000}")
     private long SSE_TIMEOUT;
 
-    // 현재는 강제로 헤더에 USER-ID를 넣어 처리하지만, 인증서버가 있다면 인증 서버를 통해 전달받음.
+    /** USER-ID 헤더 검증은 앞단 필터(config.UserIdRequiredFilter)에서 수행한다. */
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     public SseEmitter conversationStream(
             @RequestBody @Valid AssistantRequest request,
-            @RequestHeader(value = "USER-ID", required = false) String userIdHeader,
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
             HttpServletRequest httpRequest
     ) {
-        if (!StringUtils.hasText(userIdHeader)) {
-            throw new InvalidRequestException("USER-ID 헤더를 제공해주세요.");
-        }
-
         log.info("""
                         [SSE 스트리밍 채팅 요청] 프롬프트 타입: {}
                         질문: {}
@@ -73,14 +71,13 @@ public class ConversationController {
         return emitter;
     }
 
-    /** 특정 유저의 모든 대화 목록(conversationId, subject) 반환. USER-ID 헤더 필수. */
+    /**
+     * 특정 유저의 모든 대화 목록(conversationId, subject) 반환. USER-ID 헤더 필수.
+     */
     @GetMapping("")
     public ResponseEntity<?> getConversations(
-            @RequestHeader(value = "USER-ID", required = false) String userIdHeader
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader
     ) {
-        if (!StringUtils.hasText(userIdHeader)) {
-            throw new InvalidRequestException("USER-ID 헤더를 제공해주세요.");
-        }
         return ResponseEntity.ok(conversationService.getConversations(userIdHeader));
     }
 
@@ -88,7 +85,7 @@ public class ConversationController {
     public SseEmitter conversationStreamWithFile(
             @RequestPart("file") MultipartFile file,
             @RequestPart("request") String requestJson,
-            @RequestHeader(value = "USER-ID", required = false) String userIdHeader,
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
             HttpServletRequest httpRequest
     ) {
         log.info("[SSE 스트리밍 파일 첨부 요청] 파일명: {}", file.getOriginalFilename());
@@ -100,10 +97,6 @@ public class ConversationController {
         } catch (JsonProcessingException e) {
             log.error("요청 JSON 파싱 실패", e);
             throw new InvalidRequestException("요청 데이터 형식이 올바르지 않습니다: " + e.getMessage());
-        }
-
-        if (!StringUtils.hasText(userIdHeader)) {
-            throw new InvalidRequestException("USER-ID 헤더를 제공해주세요.");
         }
 
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
@@ -139,12 +132,28 @@ public class ConversationController {
     @GetMapping("/{conversationId}")
     public ResponseEntity<?> getConversation(
             @PathVariable String conversationId,
-            @RequestHeader(value = "USER-ID", required = false) String userIdHeader,
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
             @RequestParam(value = "limit", required = false) Integer limit
     ) {
-        if (!StringUtils.hasText(userIdHeader)) {
-            throw new InvalidRequestException("USER-ID 헤더를 제공해주세요.");
-        }
         return ResponseEntity.ok(conversationService.getConversation(userIdHeader, conversationId, limit));
+    }
+
+    @DeleteMapping("/{conversationId}")
+    public ResponseEntity<?> deleteConversation(
+            @PathVariable String conversationId,
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader
+    ) {
+        boolean deleted = conversationService.deleteConversation(userIdHeader, conversationId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @PatchMapping("/{conversationId}")
+    public ResponseEntity<Void> changeSubject(
+            @PathVariable String conversationId,
+            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
+            @RequestBody @Valid ChangeSubjectRequest request
+    ) {
+        conversationService.changeSubject(userIdHeader, conversationId, request.subject());
+        return ResponseEntity.noContent().build();
     }
 }
