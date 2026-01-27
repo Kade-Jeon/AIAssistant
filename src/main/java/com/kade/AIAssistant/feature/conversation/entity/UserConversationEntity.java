@@ -27,7 +27,7 @@ public class UserConversationEntity {
     @EmbeddedId
     private UserConversationId id;
 
-    @Column(name = "subject", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "subject", nullable = false, length = 32)
     private String subject;
 
     @CreatedDate
@@ -40,7 +40,8 @@ public class UserConversationEntity {
 
     public UserConversationEntity(String userId, String conversationId, String subject) {
         this.id = new UserConversationId(userId, conversationId);
-        this.subject = subject != null ? subject : "(제목 없음)";
+        String raw = subject != null ? subject : "(제목 없음)";
+        this.subject = raw.length() > 32 ? raw.substring(0, 32) : raw;
     }
 
     /** updatedAt만 현재 시각으로 갱신. 기존 대화에 새 메시지 보낼 때 save 전에 호출. */
@@ -48,8 +49,9 @@ public class UserConversationEntity {
         this.updatedAt = Instant.now();
     }
 
-    /** 제목만 변경. 빈 값이면 "(제목 없음)"으로 넣는다. */
+    /** 제목만 변경. 빈 값이면 "(제목 없음)"으로 넣는다. VARCHAR(32) 초과분은 절단. */
     public void changeSubject(String subject) {
-        this.subject = (subject != null && !subject.isBlank()) ? subject : "(제목 없음)";
+        String raw = (subject != null && !subject.isBlank()) ? subject : "(제목 없음)";
+        this.subject = raw.length() > 32 ? raw.substring(0, 32) : raw;
     }
 }

@@ -18,6 +18,7 @@ import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Cache-Aside 패턴 ChatMemory 구현.
@@ -45,13 +46,49 @@ public class RedisChatMemory implements ChatMemory {
         Assert.notNull(messages, "messages cannot be null");
         Assert.noNullElements(messages, "messages cannot contain null elements");
 
+        // 저장 시 USER 메시지 중 파일 첨부 형식("다음 첨부파일(문서) 내용:...사용자 요청: X")은 사용자 요청(X)만 저장
+        List<Message> toStore = messages.stream()
+                .map(RedisChatMemory::toStoredMessage)
+                .toList();
+
         List<Message> current = get(conversationId);
         List<Message> combined = new ArrayList<>(current);
-        combined.addAll(messages);
+        combined.addAll(toStore);
         repository.saveAll(conversationId, combined);
         writeCache(conversationId, combined);
         log.debug("[RedisChatMemory] add 완료 - conversationId: {}, 추가: {}, 전체: {}",
                 conversationId, messages.size(), combined.size());
+    }
+
+    /**
+     * 저장용 메시지로 변환. 파일 첨부 USER 메시지는 "사용자 요청:" 이후만 저장한다.
+     * AI 호출 시에는 Controller에서 파일 본문+사용자 요청 전체를 보내므로, 저장 단계에서만 trim.
+     */
+    private static Message toStoredMessage(Message m) {
+        if (!(m instanceof UserMessage user)) {
+            return m;
+        }
+        String text = user.getText();
+        if (!StringUtils.hasText(text)) {
+            return m;
+        }
+        String stored = extractUserRequestFromFileAttachment(text);
+        if (stored == text) {
+            return m;
+        }
+        return new UserMessage(stored);
+    }
+
+    private static final String FILE_ATTACHMENT_MARKER = "다음 첨부파일(문서) 내용:";
+    private static final String USER_REQUEST_MARKER = "사용자 요청:";
+
+    private static String extractUserRequestFromFileAttachment(String content) {
+        if (!content.startsWith(FILE_ATTACHMENT_MARKER) || !content.contains(USER_REQUEST_MARKER)) {
+            return content;
+        }
+        int idx = content.indexOf(USER_REQUEST_MARKER);
+        String userRequest = content.substring(idx + USER_REQUEST_MARKER.length()).trim();
+        return StringUtils.hasText(userRequest) ? userRequest : content;
     }
 
     @Override

@@ -38,6 +38,23 @@ public class StreamingService {
             SseEmitter emitter,
             StreamingSessionInfo sessionInfo
     ) {
+        streamToSse(chatResponseStream, emitter, sessionInfo, null);
+    }
+
+    /**
+     * SSE 스트리밍 처리 (완료 콜백 포함)
+     *
+     * @param chatResponseStream AI 모델 스트리밍 응답
+     * @param emitter            SSE 에미터
+     * @param sessionInfo        세션 정보
+     * @param onCompleteCallback 스트리밍 완료 시 실행할 콜백 (선택사항)
+     */
+    public void streamToSse(
+            Flux<ChatResponse> chatResponseStream,
+            SseEmitter emitter,
+            StreamingSessionInfo sessionInfo,
+            Runnable onCompleteCallback
+    ) {
         // 연결 상태 추적 (로그 폭탄 방지)
         AtomicBoolean isConnected = new AtomicBoolean(true);
 
@@ -133,6 +150,17 @@ public class StreamingService {
                                 .data(objectMapper.writeValueAsString(completionData))
                                 .name("chunk"));
                         log.info("SSE 스트리밍 완료");
+                        
+                        // 스트리밍 완료 후 콜백 실행 (Spring AI의 saveAll이 완료된 후)
+                        if (onCompleteCallback != null) {
+                            try {
+                                // 약간의 지연을 두어 Spring AI의 saveAll이 완료되도록 함
+                                Thread.sleep(100);
+                                onCompleteCallback.run();
+                            } catch (Exception e) {
+                                log.error("스트리밍 완료 콜백 실행 실패", e);
+                            }
+                        }
                     } catch (Exception e) {
                         log.error("SSE 완료 메시지 전송 실패", e);
                     } finally {

@@ -27,9 +27,10 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.util.StringUtils;
 
 /**
- * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다.
+ * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다. USER-ID 헤더 검증은 앞단 필터(config.UserIdRequiredFilter)에서 수행한다.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -44,7 +45,6 @@ public class ConversationController {
     @Value("${app.sse.timeout:300000}")
     private long SSE_TIMEOUT;
 
-    /** USER-ID 헤더 검증은 앞단 필터(config.UserIdRequiredFilter)에서 수행한다. */
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     public SseEmitter conversationStream(
             @RequestBody @Valid AssistantRequest request,
@@ -120,7 +120,38 @@ public class ConversationController {
             );
 
             emitter.send(SseEmitter.event().name("open").data("connected"));
-            conversationService.streamToSse(userIdHeader, fileRequest, emitter);
+
+            // 첨부파일 메타데이터 저장을 위한 정보 준비
+            String userRequestText = request.question();
+            String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
+            String mimeType = file.getContentType();
+            Long fileSize = file.getSize();
+            
+            // 스트리밍 완료 후 첨부파일 메타데이터 저장 (Spring AI의 saveAll이 완료된 후)
+            // conversationId는 streamToSse에서 결정되므로, AtomicReference로 전달
+            java.util.concurrent.atomic.AtomicReference<String> conversationIdRef = new java.util.concurrent.atomic.AtomicReference<>();
+            
+            Runnable saveAttachmentCallback = () -> {
+                String conversationId = conversationIdRef.get();
+                if (conversationId != null) {
+                    log.info("스트리밍 완료 후 첨부파일 메타데이터 저장 시작 - conversationId: {}", conversationId);
+                    conversationService.saveAttachmentMetadata(
+                            conversationId,
+                            userRequestText,
+                            filename,
+                            mimeType,
+                            fileSize
+                    );
+                } else {
+                    log.warn("스트리밍 완료 콜백 실행 시 conversationId가 null입니다");
+                }
+            };
+            
+            // streamToSse 호출 (conversationId 반환)
+            String conversationId = conversationService.streamToSse(userIdHeader, fileRequest, emitter, saveAttachmentCallback);
+            
+            // conversationId 설정 (비동기 콜백에서 사용)
+            conversationIdRef.set(conversationId);
         } catch (Exception e) {
             log.error("파일 처리 실패", e);
             emitter.completeWithError(e);

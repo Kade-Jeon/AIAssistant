@@ -118,12 +118,12 @@ public class ModelExecuteService {
                 String content = response.getResult().getOutput().getText();
                 if (StringUtils.hasText(content)) {
                     String trimmed = content.trim();
-                    return trimmed.length() > 36 ? trimmed.substring(0, 36) : trimmed;
+                    return trimmed.length() > 32 ? trimmed.substring(0, 32) : trimmed;
                 }
             }
         } catch (Exception e) {
             log.warn("제목 생성 실패, 질문 앞부분 사용: {}", e.getMessage());
         }
-        return question.length() > 36 ? question.substring(0, 36) : question;
+        return question.length() > 32 ? question.substring(0, 32) : question;
     }
 }
