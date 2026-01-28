@@ -74,6 +74,11 @@ public class StreamingService {
                         // 공통 로직: 청크 처리
                         ProcessedChunk chunk = chunkProcessor.processChunk(chatResponse, sessionInfo);
 
+                        // ASSISTANT 응답 content 누적 (스트리밍 완료 후 저장용)
+                        if (chunk.content() != null && !chunk.content().isEmpty()) {
+                            sessionInfo.appendContent(chunk.content());
+                        }
+
                         // finish_reason 처리
                         String finishReason = sessionInfo.getFinishReason();
 

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 채팅 메시지 첨부파일 메타데이터.
- * SPRING_AI_CHAT_MEMORY.message_id로 메시지와 연결.
+ * CHAT_MESSAGE.message_id로 메시지와 연결 (FK 제약).
  */
 @Entity
 @Table(name = "CHAT_ATTACHMENT")

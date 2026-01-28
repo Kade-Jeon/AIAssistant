@@ -45,6 +45,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // Spring AI JDBC Chat Memory (RDB 영구 저장)
+    // 주의: JdbcChatMemoryRepository는 사용하지 않지만, ChatMemoryRepository 인터페이스가 필요할 수 있어 유지
+    // 실제 구현은 CustomChatMemoryRepository 사용 (CHAT_MESSAGE 테이블)
     implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-repository-jdbc'
 
     // Vector DB

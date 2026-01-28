@@ -11,11 +11,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Spring AI 채팅 메모리 테이블(SPRING_AI_CHAT_MEMORY) 매핑.
- * <p>Spring AI는 conversation_id, content, type, timestamp 4컬럼만 INSERT. message_id는 DB DEFAULT로 자동 생성.
+ * 채팅 메시지 테이블(CHAT_MESSAGE) 매핑.
+ * <p>안정적인 message_id로 모든 대화 히스토리를 저장합니다.
+ * message_id는 변경되지 않으므로 CHAT_ATTACHMENT와 FK 제약이 가능합니다.
  */
 @Entity
-@Table(name = "SPRING_AI_CHAT_MEMORY")
+@Table(name = "CHAT_MESSAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessageEntity {
@@ -35,4 +36,16 @@ public class ChatMessageEntity {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    public ChatMessageEntity(String conversationId, String type, String content, Instant timestamp) {
+        this.messageId = UUID.randomUUID();
+        this.conversationId = conversationId;
+        this.type = type;
+        this.content = content;
+        this.timestamp = timestamp;
+        this.createdAt = Instant.now();
+    }
 }

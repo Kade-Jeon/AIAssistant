@@ -1,16 +1,21 @@
--- Spring AI JDBC Chat Memory (PostgreSQL)
--- JdbcChatMemoryRepository auto-config 제외 시 수동 초기화용
--- message_id: Spring AI는 4컬럼만 INSERT. PK는 DB DEFAULT gen_random_uuid()로 자동 생성.
-CREATE TABLE IF NOT EXISTS SPRING_AI_CHAT_MEMORY (
+-- 채팅 메시지 테이블 (안정적인 message_id로 모든 대화 히스토리 저장)
+-- message_id는 안정적으로 유지되므로 CHAT_ATTACHMENT와 FK 제약 가능
+CREATE TABLE IF NOT EXISTS CHAT_MESSAGE (
     message_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id VARCHAR(36) NOT NULL,
     content TEXT NOT NULL,
     type VARCHAR(10) NOT NULL CHECK (type IN ('USER', 'ASSISTANT', 'SYSTEM', 'TOOL')),
-    "timestamp" TIMESTAMP NOT NULL
+    "timestamp" TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS SPRING_AI_CHAT_MEMORY_CONVERSATION_ID_TIMESTAMP_IDX
-ON SPRING_AI_CHAT_MEMORY(conversation_id, "timestamp");
+CREATE INDEX IF NOT EXISTS CHAT_MESSAGE_CONVERSATION_ID_TIMESTAMP_IDX
+ON CHAT_MESSAGE(conversation_id, "timestamp" DESC);
+
+-- Spring AI JDBC Chat Memory (PostgreSQL) - 더 이상 사용하지 않음 (제거됨)
+-- 이전에는 JdbcChatMemoryRepository가 SPRING_AI_CHAT_MEMORY 테이블을 사용했으나,
+-- 현재는 CustomChatMemoryRepository가 CHAT_MESSAGE 테이블을 사용합니다.
+-- SPRING_AI_CHAT_MEMORY 테이블은 더 이상 필요하지 않으므로 제거되었습니다.
 
 -- 유저별 대화 소유 매핑 (어떤 유저가 어떤 conversationId를 쓰는지)
 -- created_at, updated_at 은 JPA Auditing으로 채움
@@ -25,12 +30,11 @@ CREATE TABLE IF NOT EXISTS USER_CONVERSATION (
 
 CREATE INDEX IF NOT EXISTS USER_CONVERSATION_USER_ID_IDX ON USER_CONVERSATION(user_id);
 
--- 채팅 메시지 첨부파일 메타데이터 (message_id로 SPRING_AI_CHAT_MEMORY 참조)
--- 참고: FK 제약 없음 (Spring AI의 JdbcChatMemoryRepository가 saveAll 시 DELETE+INSERT 방식으로
--- 메시지를 교체하므로, FK가 있으면 DELETE 단계에서 FK 위반 발생. message_id는 매칭용으로만 사용)
+-- 채팅 메시지 첨부파일 메타데이터 (message_id로 CHAT_MESSAGE 참조)
+-- FK 제약 추가: CHAT_MESSAGE의 message_id는 안정적이므로 FK 제약 가능
 CREATE TABLE IF NOT EXISTS CHAT_ATTACHMENT (
     id BIGSERIAL PRIMARY KEY,
-    message_id UUID NOT NULL,
+    message_id UUID NOT NULL REFERENCES CHAT_MESSAGE(message_id) ON DELETE CASCADE,
     conversation_id VARCHAR(36) NOT NULL,
     filename VARCHAR(255) NOT NULL,
     mime_type VARCHAR(100),

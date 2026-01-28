@@ -6,7 +6,8 @@ spring:
   server:
     port: 8080
 
-  # DatabaseDriver 오류 회피: JDBC Chat Memory 스키마 자동 초기화 비활성화 → schema.sql로 대체
+  # JDBC Chat Memory 자동 설정 제외 (CustomChatMemoryRepository 사용)
+  # CustomChatMemoryRepository가 CHAT_MESSAGE 테이블을 사용하므로 JdbcChatMemoryRepository는 필요 없음
   autoconfigure:
     exclude:
       - org.springframework.ai.model.chat.memory.repository.jdbc.autoconfigure.JdbcChatMemoryRepositoryAutoConfiguration
@@ -42,7 +43,8 @@ spring:
       base-url: http://192.168.200.166:11434
       chat:
         model: qwen2.5:1.5b
-    # JDBC Chat Memory: 스키마는 schema.sql로 직접 초기화 (auto-config 제외로 DatabaseDriver 오류 회피)
+    # JDBC Chat Memory: CustomChatMemoryRepository 사용 (CHAT_MESSAGE 테이블)
+    # JdbcChatMemoryRepository는 사용하지 않으므로 스키마 자동 초기화 비활성화
     chat:
       memory:
         repository:

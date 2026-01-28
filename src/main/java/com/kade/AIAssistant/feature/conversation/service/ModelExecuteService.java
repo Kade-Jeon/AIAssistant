@@ -65,7 +65,9 @@ public class ModelExecuteService {
         // 기존 팩토리로 ChatModel 생성 (기본 옵션 포함)
         OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, request.promptType(), options);
 
-        // ChatClient + MessageChatMemoryAdvisor (대화 기록 로드/저장)
+        // ChatClient + MessageChatMemoryAdvisor (대화 기록 로드만 사용, 저장은 우리가 직접)
+        // MessageChatMemoryAdvisor는 대화 시작 전 이전 메시지를 자동으로 로드하여 컨텍스트로 제공
+        // 저장은 ConversationService에서 직접 처리하므로, Advisor의 저장 기능은 CustomChatMemoryRepository의 중복 체크로 방지됨
         ChatClient chatClient = ChatClient.builder(chatModel)
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();

@@ -61,6 +61,11 @@ public class StreamingSessionInfo {
     private boolean completed = false;
 
     /**
+     * 누적된 ASSISTANT 응답 content (스트리밍 완료 후 저장용)
+     */
+    private final StringBuilder accumulatedContent = new StringBuilder();
+
+    /**
      * 청크당 평균 토큰 수 계산
      */
     public double getAverageTokensPerChunk() {
@@ -90,5 +95,21 @@ public class StreamingSessionInfo {
     public void complete() {
         this.completed = true;
         this.endTime = LocalDateTime.now();
+    }
+
+    /**
+     * ASSISTANT 응답 content 누적
+     */
+    public void appendContent(String content) {
+        if (content != null && !content.isEmpty()) {
+            this.accumulatedContent.append(content);
+        }
+    }
+
+    /**
+     * 누적된 ASSISTANT 응답 content 반환
+     */
+    public String getAccumulatedContent() {
+        return accumulatedContent.toString();
     }
 }

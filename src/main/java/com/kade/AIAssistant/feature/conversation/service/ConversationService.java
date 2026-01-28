@@ -93,11 +93,21 @@ public class ConversationService {
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
+        
+        // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
+        saveUserMessage(conversationId, request.question());
+        
         Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
         sessionInfo.setModel(MODEL_NAME);
-        streamingService.streamToSse(stream, emitter, sessionInfo);
+        
+        // 스트리밍 완료 후 ASSISTANT 메시지 저장 콜백 추가
+        Runnable saveAssistantCallback = () -> {
+            saveAssistantMessage(conversationId, sessionInfo);
+        };
+        
+        streamingService.streamToSse(stream, emitter, sessionInfo, saveAssistantCallback);
 
         return conversationId;
     }
@@ -139,11 +149,88 @@ public class ConversationService {
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
+        
+        // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
+        UUID userMessageId = saveUserMessage(conversationId, request.question());
+        
         Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
         sessionInfo.setModel(MODEL_NAME);
-        streamingService.streamToSse(stream, emitter, sessionInfo, onCompleteCallback);
+        
+        // 스트리밍 완료 후 ASSISTANT 메시지 저장 콜백 추가
+        Runnable combinedCallback = () -> {
+            // ASSISTANT 메시지 저장
+            saveAssistantMessage(conversationId, sessionInfo);
+            // 기존 콜백 실행 (첨부파일 메타데이터 저장 등)
+            if (onCompleteCallback != null) {
+                onCompleteCallback.run();
+            }
+        };
+        
+        streamingService.streamToSse(stream, emitter, sessionInfo, combinedCallback);
+
+        return conversationId;
+    }
+
+    /**
+     * [SSE 스트리밍] AI 채팅 응답 생성 (완료 콜백 포함, userMessageId 반환).
+     * 첨부파일이 있는 경우 스트리밍 완료 후 메타데이터를 저장하기 위해 사용됩니다.
+     *
+     * @param userId 사용자 ID
+     * @param request 요청 정보
+     * @param emitter SSE 에미터
+     * @param onCompleteCallback 스트리밍 완료 시 실행할 콜백 (userMessageId를 받을 수 있음)
+     * @return 사용 중인 conversationId (신규 생성 포함)
+     */
+    @Transactional
+    public String streamToSseWithUserMessageId(String userId, AssistantRequest request, SseEmitter emitter, 
+                                                java.util.function.Consumer<UUID> onCompleteCallback) {
+        boolean isNewConversation = !StringUtils.hasText(request.conversationId());
+        String conversationId = isNewConversation
+                ? UUID.randomUUID().toString()
+                : request.conversationId();
+
+        if (isNewConversation) {
+            String subject = resolveSubjectForNew(request);
+            userConversationEnsureService.ensure(userId, conversationId, subject);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("conversation_created")
+                        .data(new UserConversationItemDto(conversationId, subject)));
+            } catch (IOException e) {
+                log.warn("conversation_created 이벤트 전송 실패", e);
+            }
+        } else {
+            userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)");
+        }
+
+        AssistantRequest requestToUse = isNewConversation
+                ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
+                request.subject())
+                : request;
+
+        log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
+        
+        // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
+        UUID userMessageId = saveUserMessage(conversationId, request.question());
+        
+        Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
+
+        StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
+        sessionInfo.setModel(MODEL_NAME);
+        
+        // 스트리밍 완료 후 ASSISTANT 메시지 저장 + 콜백 실행
+        Runnable combinedCallback = () -> {
+            // ASSISTANT 메시지 저장
+            saveAssistantMessage(conversationId, sessionInfo);
+            // 기존 콜백 실행 (userMessageId 전달)
+            if (onCompleteCallback != null) {
+                onCompleteCallback.accept(userMessageId);
+            }
+        };
+        
+        streamingService.streamToSse(stream, emitter, sessionInfo, combinedCallback);
 
         return conversationId;
     }
@@ -176,18 +263,36 @@ public class ConversationService {
 
 
     /**
-     * 특정 대화방의 대화 목록 조회. 해당 conversationId가 userId 소유인지 검증 후 조회.
+     * 특정 대화방의 대화 목록 조회 (페이징 지원).
+     * 해당 conversationId가 userId 소유인지 검증 후 조회.
      *
+     * @param userId 사용자 ID
+     * @param conversationId 대화 ID
      * @param limit 없으면 기본 20개, 있으면 해당 개수(최대 100개)만 조회
+     * @param beforeTimestamp 이 시간 이전의 메시지 조회 (스크롤 업용, 선택사항)
+     * @return 대화 메시지 리스트
      * @throws ForbiddenException 해당 대화에 대한 접근 권한이 없을 때
      */
-    public List<ConversationMessageDto> getConversation(String userId, String conversationId, Integer limit) {
+    public List<ConversationMessageDto> getConversation(
+            String userId, String conversationId, Integer limit, Instant beforeTimestamp) {
         if (!userConversationRepository.existsById_UserIdAndId_ConversationId(userId, conversationId)) {
             throw new ForbiddenException("해당 대화에 대한 접근 권한이 없습니다.");
         }
         int effectiveLimit = (limit == null || limit <= 0) ? DEFAULT_LIMIT : Math.min(limit, MAX_LIMIT);
-        PageRequest pageRequest = PageRequest.of(0, effectiveLimit);
-        List<ChatMessageEntity> recent = chatMessageRepository.findRecentByConversationId(conversationId, pageRequest);
+        
+        List<ChatMessageEntity> recent;
+        if (beforeTimestamp != null) {
+            // 페이징 조회 (스크롤 업)
+            PageRequest pageRequest = PageRequest.of(0, effectiveLimit);
+            recent = chatMessageRepository.findByConversationIdAndTimestampBefore(
+                    conversationId, beforeTimestamp, pageRequest);
+            log.info("페이징 조회 - conversationId: {}, beforeTimestamp: {}, limit: {}", 
+                    conversationId, beforeTimestamp, effectiveLimit);
+        } else {
+            // 최신 메시지 조회
+            PageRequest pageRequest = PageRequest.of(0, effectiveLimit);
+            recent = chatMessageRepository.findRecentByConversationId(conversationId, pageRequest);
+        }
 
         // 첨부파일 조회 (message_id별 그룹화)
         List<ChatAttachmentEntity> allAttachments = chatAttachmentRepository
@@ -241,8 +346,30 @@ public class ConversationService {
                     attachments.isEmpty() ? null : attachments));
             messagesForCache.add(toChatMemoryMessage(e));
         }
-        redisChatMemory.warmCache(conversationId, messagesForCache);
+        // Redis 캐시 갱신 (페이징 조회인 경우 병합)
+        if (beforeTimestamp != null) {
+            // 페이징 조회 결과를 Redis 캐시에 병합
+            redisChatMemory.getWithPaging(conversationId, beforeTimestamp, effectiveLimit);
+        } else {
+            // 최신 메시지 조회 결과로 캐시 워밍업
+            redisChatMemory.warmCache(conversationId, messagesForCache);
+        }
+        
         return result;
+    }
+
+    /**
+     * 특정 대화방의 대화 목록 조회 (기본 메서드, 페이징 없음).
+     * 해당 conversationId가 userId 소유인지 검증 후 조회.
+     *
+     * @param userId 사용자 ID
+     * @param conversationId 대화 ID
+     * @param limit 없으면 기본 20개, 있으면 해당 개수(최대 100개)만 조회
+     * @return 대화 메시지 리스트
+     * @throws ForbiddenException 해당 대화에 대한 접근 권한이 없을 때
+     */
+    public List<ConversationMessageDto> getConversation(String userId, String conversationId, Integer limit) {
+        return getConversation(userId, conversationId, limit, null);
     }
 
     private static Message toChatMemoryMessage(ChatMessageEntity e) {
@@ -258,81 +385,95 @@ public class ConversationService {
     }
 
     /**
-     * 파일 첨부 메타데이터 저장. 저장된 USER 메시지의 content를 기반으로 정확한 message_id를 찾아서 연결.
+     * USER 메시지를 우리 테이블에 저장
+     * @return 저장된 메시지의 messageId (저장 실패 시 null)
+     */
+    @Transactional(readOnly = false)
+    private UUID saveUserMessage(String conversationId, String userQuestion) {
+        if (!StringUtils.hasText(userQuestion)) {
+            return null;
+        }
+        
+        // 파일 첨부 형식인 경우 "사용자 요청:" 이후만 저장
+        String contentToStore = extractUserRequestFromFileAttachment(userQuestion);
+        
+        ChatMessageEntity entity = new ChatMessageEntity(
+                conversationId,
+                "USER",
+                contentToStore,
+                Instant.now()
+        );
+        ChatMessageEntity saved = chatMessageRepository.save(entity);
+        log.debug("USER 메시지 저장 완료 - conversationId: {}, messageId: {}", 
+                conversationId, saved.getMessageId());
+        return saved.getMessageId();
+    }
+
+    /**
+     * ASSISTANT 메시지를 우리 테이블에 저장
+     */
+    @Transactional(readOnly = false)
+    private void saveAssistantMessage(String conversationId, StreamingSessionInfo sessionInfo) {
+        String content = sessionInfo.getAccumulatedContent();
+        if (!StringUtils.hasText(content)) {
+            log.debug("ASSISTANT 메시지 content가 비어있어 저장하지 않음 - conversationId: {}", conversationId);
+            return;
+        }
+        
+        ChatMessageEntity entity = new ChatMessageEntity(
+                conversationId,
+                "ASSISTANT",
+                content,
+                Instant.now()
+        );
+        chatMessageRepository.save(entity);
+        log.info("ASSISTANT 메시지 저장 완료 - conversationId: {}, messageId: {}, content 길이: {}", 
+                conversationId, entity.getMessageId(), content.length());
+    }
+
+    /**
+     * 파일 첨부 형식에서 사용자 요청 부분만 추출
+     */
+    private static String extractUserRequestFromFileAttachment(String content) {
+        String FILE_ATTACHMENT_MARKER = "다음 첨부파일(문서) 내용:";
+        String USER_REQUEST_MARKER = "사용자 요청:";
+        
+        if (!content.startsWith(FILE_ATTACHMENT_MARKER) || !content.contains(USER_REQUEST_MARKER)) {
+            return content;
+        }
+        int idx = content.indexOf(USER_REQUEST_MARKER);
+        String userRequest = content.substring(idx + USER_REQUEST_MARKER.length()).trim();
+        return StringUtils.hasText(userRequest) ? userRequest : content;
+    }
+
+    /**
+     * 파일 첨부 메타데이터 저장. 저장된 USER 메시지의 message_id를 직접 사용하여 연결.
      * <p>
      * <b>주의:</b> 이 메서드는 첨부파일이 있는 경우에만 호출되어야 합니다.
      * 일반 메시지(첨부파일 없음)의 경우 호출되지 않습니다.
      * </p>
      *
      * @param conversationId 대화 ID
-     * @param userRequestText 저장된 USER 메시지의 content (파일 첨부 시 "사용자 요청:" 이후 부분만 저장됨)
+     * @param userMessageId 저장된 USER 메시지의 messageId (직접 전달)
      * @param filename 파일명
      * @param mimeType MIME 타입
      * @param size 파일 크기 (bytes)
      */
     @Transactional(readOnly = false)
-    public void saveAttachmentMetadata(String conversationId, String userRequestText, String filename, String mimeType, Long size) {
-        log.info("파일 첨부 메타데이터 저장 시작 - conversationId: {}, filename: {}, userRequestText: {}", 
-                conversationId, filename, userRequestText);
-        
-        UUID messageId = null;
-        
-        // content 기반으로 정확한 메시지 찾기 시도
-        if (StringUtils.hasText(userRequestText)) {
-            // content의 앞부분 일부를 사용하여 검색 (LIKE 검색)
-            String contentSnippet = userRequestText.length() > 50 
-                    ? userRequestText.substring(0, 50) 
-                    : userRequestText;
-            // LIKE 검색을 위해 % 기호 추가
-            String likePattern = "%" + contentSnippet + "%";
-            
-            Optional<ChatMessageEntity> found = chatMessageRepository
-                    .findUserMessageByConversationIdAndContentSnippet(conversationId, likePattern);
-            
-            if (found.isPresent()) {
-                messageId = found.get().getMessageId();
-                log.info("content 기반으로 USER 메시지 발견 - messageId: {}, timestamp: {}", 
-                        messageId, found.get().getTimestamp());
-            }
-        }
-        
-        // content 기반 검색 실패 시 최근 USER 메시지 찾기 (fallback)
-        if (messageId == null) {
-            log.warn("content 기반 검색 실패, 최근 USER 메시지로 fallback - conversationId: {}", conversationId);
-            for (int i = 0; i < 5; i++) {
-                List<ChatMessageEntity> recent = chatMessageRepository
-                        .findRecentByConversationId(conversationId, PageRequest.of(0, 10));
-                log.info("USER 메시지 찾기 시도 {} - conversationId: {}, 조회된 메시지 수: {}", i + 1, conversationId, recent.size());
-                messageId = recent.stream()
-                        .filter(m -> "USER".equalsIgnoreCase(m.getType()))
-                        .findFirst()
-                        .map(m -> {
-                            UUID id = m.getMessageId();
-                            log.info("USER 메시지 발견 - messageId: {}, timestamp: {}, content 길이: {}", 
-                                    id, m.getTimestamp(), m.getContent() != null ? m.getContent().length() : 0);
-                            return id;
-                        })
-                        .orElse(null);
-                if (messageId != null) break;
-                if (i < 4) {
-                    try { Thread.sleep(150); } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
-            }
-        }
-        
-        if (messageId == null) {
-            log.warn("파일 첨부 메타데이터 저장 실패: USER 메시지 없음 - conversationId: {}", conversationId);
+    public void saveAttachmentMetadata(String conversationId, UUID userMessageId, String filename, String mimeType, Long size) {
+        if (userMessageId == null) {
+            log.warn("파일 첨부 메타데이터 저장 실패: userMessageId가 null - conversationId: {}", conversationId);
             return;
         }
         
+        log.info("파일 첨부 메타데이터 저장 시작 - conversationId: {}, messageId: {}, filename: {}", 
+                conversationId, userMessageId, filename);
+        
         ChatAttachmentEntity attachment = new ChatAttachmentEntity(
-                messageId, conversationId, filename, mimeType, size);
+                userMessageId, conversationId, filename, mimeType, size);
         ChatAttachmentEntity saved = chatAttachmentRepository.save(attachment);
         log.info("파일 첨부 메타데이터 저장 완료 - conversationId: {}, messageId: {}, filename: {}, savedId: {}", 
-                conversationId, messageId, filename, saved.getId());
+                conversationId, userMessageId, filename, saved.getId());
     }
 
     @Transactional(readOnly = false)

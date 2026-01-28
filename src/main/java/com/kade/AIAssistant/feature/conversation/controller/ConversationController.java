@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.util.StringUtils;
 
 /**
  * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다. USER-ID 헤더 검증은 앞단 필터(config.UserIdRequiredFilter)에서 수행한다.
@@ -122,33 +121,36 @@ public class ConversationController {
             emitter.send(SseEmitter.event().name("open").data("connected"));
 
             // 첨부파일 메타데이터 저장을 위한 정보 준비
-            String userRequestText = request.question();
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
             String mimeType = file.getContentType();
             Long fileSize = file.getSize();
             
-            // 스트리밍 완료 후 첨부파일 메타데이터 저장 (Spring AI의 saveAll이 완료된 후)
-            // conversationId는 streamToSse에서 결정되므로, AtomicReference로 전달
-            java.util.concurrent.atomic.AtomicReference<String> conversationIdRef = new java.util.concurrent.atomic.AtomicReference<>();
+            // conversationId는 streamToSseWithUserMessageId에서 결정되므로, AtomicReference로 전달
+            java.util.concurrent.atomic.AtomicReference<String> conversationIdRef = 
+                    new java.util.concurrent.atomic.AtomicReference<>();
             
-            Runnable saveAttachmentCallback = () -> {
+            // 스트리밍 완료 후 첨부파일 메타데이터 저장 (userMessageId 직접 사용)
+            java.util.function.Consumer<java.util.UUID> saveAttachmentCallback = (userMessageId) -> {
                 String conversationId = conversationIdRef.get();
-                if (conversationId != null) {
-                    log.info("스트리밍 완료 후 첨부파일 메타데이터 저장 시작 - conversationId: {}", conversationId);
+                if (userMessageId != null && conversationId != null) {
+                    log.info("스트리밍 완료 후 첨부파일 메타데이터 저장 시작 - conversationId: {}, userMessageId: {}", 
+                            conversationId, userMessageId);
                     conversationService.saveAttachmentMetadata(
                             conversationId,
-                            userRequestText,
+                            userMessageId,
                             filename,
                             mimeType,
                             fileSize
                     );
                 } else {
-                    log.warn("스트리밍 완료 콜백 실행 시 conversationId가 null입니다");
+                    log.warn("스트리밍 완료 콜백 실행 시 conversationId 또는 userMessageId가 null입니다 - conversationId: {}, userMessageId: {}", 
+                            conversationId, userMessageId);
                 }
             };
             
-            // streamToSse 호출 (conversationId 반환)
-            String conversationId = conversationService.streamToSse(userIdHeader, fileRequest, emitter, saveAttachmentCallback);
+            // streamToSseWithUserMessageId 호출 (userMessageId를 콜백으로 전달)
+            String conversationId = conversationService.streamToSseWithUserMessageId(
+                    userIdHeader, fileRequest, emitter, saveAttachmentCallback);
             
             // conversationId 설정 (비동기 콜백에서 사용)
             conversationIdRef.set(conversationId);
@@ -164,9 +166,11 @@ public class ConversationController {
     public ResponseEntity<?> getConversation(
             @PathVariable String conversationId,
             @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
-            @RequestParam(value = "limit", required = false) Integer limit
+            @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "beforeTimestamp", required = false) java.time.Instant beforeTimestamp
     ) {
-        return ResponseEntity.ok(conversationService.getConversation(userIdHeader, conversationId, limit));
+        return ResponseEntity.ok(conversationService.getConversation(
+                userIdHeader, conversationId, limit, beforeTimestamp));
     }
 
     @DeleteMapping("/{conversationId}")
