@@ -62,6 +62,11 @@ app:
     timeout: 300000  # 기본값: 5분 (밀리초)
   subject-generation:
     timeout-seconds: 30  # 제목 생성 AI 호출 타임아웃(초), 초과 시 질문 앞 36자 사용
+  conversation:
+    context-limit: 20  # AI 컨텍스트에 포함할 최근 메시지 개수 (MessageChatMemoryAdvisor가 사용)
+    cache-limit: 20  # Redis 캐시에 저장할 최대 메시지 개수
+    default-limit: 20  # API 기본 조회 개수
+    max-limit: 100  # API 최대 조회 개수
 
 # OpenTelemetry 설정 (Langfuse는 Traces만 수집하므로 Logs/Metrics 전송 비활성화)
 otel:

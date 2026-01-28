@@ -37,15 +37,11 @@ public class ChatMessageEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
-
     public ChatMessageEntity(String conversationId, String type, String content, Instant timestamp) {
         this.messageId = UUID.randomUUID();
         this.conversationId = conversationId;
         this.type = type;
         this.content = content;
         this.timestamp = timestamp;
-        this.createdAt = Instant.now();
     }
 }

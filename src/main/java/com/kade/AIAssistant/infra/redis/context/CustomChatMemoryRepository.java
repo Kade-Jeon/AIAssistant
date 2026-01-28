@@ -13,6 +13,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -28,16 +29,16 @@ import org.springframework.util.Assert;
 @RequiredArgsConstructor
 public class CustomChatMemoryRepository implements ChatMemoryRepository {
 
-    private static final int DEFAULT_MESSAGE_LIMIT = 20; // Redis 캐시 미스 시 조회할 기본 메시지 수
-
     private final ChatMessageRepository chatMessageRepository;
+    @Value("${app.conversation.context-limit:20}")
+    private int defaultMessageLimit; // Reids 캐시 미스 시 조회할 기본 메시지 수
 
     @Override
     public List<Message> findByConversationId(String conversationId) {
         Assert.hasText(conversationId, "conversationId cannot be null or empty");
 
         // 최신 N개만 조회 (페이징)
-        Pageable pageable = PageRequest.of(0, DEFAULT_MESSAGE_LIMIT);
+        Pageable pageable = PageRequest.of(0, defaultMessageLimit);
         List<ChatMessageEntity> entities = chatMessageRepository
                 .findRecentByConversationId(conversationId, pageable);
 

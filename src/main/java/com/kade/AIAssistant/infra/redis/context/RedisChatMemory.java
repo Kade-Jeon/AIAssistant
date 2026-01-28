@@ -19,6 +19,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -35,7 +36,6 @@ import org.springframework.util.StringUtils;
 public class RedisChatMemory implements ChatMemory {
 
     private static final Duration CACHE_TTL = Duration.ofHours(1L);
-    private static final int MAX_CACHED_MESSAGES = 20; // 캐시에 저장할 최대 메시지 수 (최신 N개만 유지)
     private static final TypeReference<List<MessageDto>> MESSAGE_LIST_TYPE = new TypeReference<List<MessageDto>>() {
     };
 
@@ -43,6 +43,7 @@ public class RedisChatMemory implements ChatMemory {
     private final ChatMemoryRepository repository;
     private final ObjectMapper objectMapper;
     private final ChatMessageRepository chatMessageRepository;
+    private final @Value("${app.conversation.cache-limit:20}") int maxCachedMessages;
 
     @Override
     public void add(String conversationId, List<Message> messages) {
@@ -68,7 +69,7 @@ public class RedisChatMemory implements ChatMemory {
         List<Message> merged = mergeMessages(current, toStore);
 
         // 최신 N개만 유지 (메모리 효율을 위해)
-        List<Message> limited = limitToRecent(merged, MAX_CACHED_MESSAGES);
+        List<Message> limited = limitToRecent(merged, maxCachedMessages);
         writeCache(conversationId, limited);
 
         log.debug("[RedisChatMemory] add 완료 (캐시만 갱신, DB 저장 안함) - conversationId: {}, 추가: {}, 병합 후: {}, 제한 후: {}",
