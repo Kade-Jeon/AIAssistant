@@ -150,7 +150,11 @@ public class StreamingService {
                                 .data(objectMapper.writeValueAsString(completionData))
                                 .name("chunk"));
                         log.info("SSE 스트리밍 완료");
-                        
+
+                        // 프런트 스트림 완료 인지용 이벤트 (event: stream_complete, data: {})
+                        emitter.send(SseEmitter.event()
+                                .name("stream_complete"));
+
                         // 스트리밍 완료 후 콜백 실행 (Spring AI의 saveAll이 완료된 후)
                         if (onCompleteCallback != null) {
                             try {
