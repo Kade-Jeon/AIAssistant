@@ -1,5 +1,6 @@
 package com.kade.AIAssistant.feature.conversation.repository;
 
+import com.kade.AIAssistant.common.enums.MessageType;
 import com.kade.AIAssistant.feature.conversation.entity.ChatMessageEntity;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +50,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     @Deprecated
     @Query("SELECT m FROM ChatMessageEntity m " +
            "WHERE m.conversationId = :conversationId " +
-           "AND m.type = 'USER' " +
+           "AND m.type = com.kade.AIAssistant.common.enums.MessageType.USER " +
            "AND m.content LIKE :contentSnippet " +
            "ORDER BY m.timestamp DESC")
     Optional<ChatMessageEntity> findUserMessageByConversationIdAndContentSnippet(

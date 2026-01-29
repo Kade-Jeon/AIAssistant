@@ -1,5 +1,6 @@
 package com.kade.AIAssistant.infra.redis.context;
 
+import com.kade.AIAssistant.common.enums.MessageType;
 import com.kade.AIAssistant.feature.conversation.entity.ChatMessageEntity;
 import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepository;
 import java.time.Instant;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,7 +72,8 @@ public class CustomChatMemoryRepository implements ChatMemoryRepository {
         Instant now = Instant.now();
 
         for (Message message : messages) {
-            String type = message.getMessageType().getValue().toUpperCase();
+            // Spring AI MessageType을 우리 MessageType enum으로 변환
+            MessageType type = MessageType.fromValue(message.getMessageType().getValue());
             String content = message.getText();
             String key = createEntityKey(type, content);
 
@@ -109,8 +110,8 @@ public class CustomChatMemoryRepository implements ChatMemoryRepository {
     /**
      * Entity의 고유 키 생성 (type + content)
      */
-    private String createEntityKey(String type, String content) {
-        return type + "::" + (content != null ? content : "");
+    private String createEntityKey(MessageType type, String content) {
+        return type.name() + "::" + (content != null ? content : "");
     }
 
     @Override
@@ -152,10 +153,14 @@ public class CustomChatMemoryRepository implements ChatMemoryRepository {
      * ChatMessageEntity를 Spring AI Message로 변환
      */
     private Message toMessage(ChatMessageEntity entity) {
-        MessageType type = MessageType.fromValue(entity.getType().toLowerCase());
+        MessageType type = entity.getType();
         String text = entity.getContent();
 
-        return switch (type) {
+        // Spring AI MessageType으로 변환
+        org.springframework.ai.chat.messages.MessageType springAiType = 
+                org.springframework.ai.chat.messages.MessageType.fromValue(type.getValue());
+
+        return switch (springAiType) {
             case SYSTEM -> new SystemMessage(text);
             case USER -> new UserMessage(text);
             case ASSISTANT -> new AssistantMessage(text);
