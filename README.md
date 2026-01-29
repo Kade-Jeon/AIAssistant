@@ -49,8 +49,6 @@ cd docker
 docker compose up -d
 ```
 
-이 명령어는 다음 서비스들을 실행합니다:
-
 - **Langfuse**: 프롬프트 관리 및 Observability (포트 3000)
 - **Redis (Langfuse용)**: Langfuse 내부 캐싱 (포트 6379)
 - **PostgreSQL (Langfuse용)**: Langfuse 메타데이터 저장 (포트 5432)
@@ -66,6 +64,7 @@ docker compose up -d
 ```
 
 애플리케이션은 `http://localhost:8080`에서 실행됩니다.
+
 Langfuse는 `http://localhost:3000`에서 실행됩니다.
 
 ## 핵심 구현 포인트
@@ -116,7 +115,7 @@ public List<Message> get(String conversationId) {
 **설계 고민**:
 
 - Spring AI의 `MessageChatMemoryAdvisor`는 대화 시작 전 이전 메시지를 자동으로 로드하여 컨텍스트로 제공
-- 하지만 저장은 `ConversationService`에서 직접 처리해야 함 (파일 첨부 형식에서 "사용자 요청:" 부분만 저장하기 위해)
+- 하지만 저장은 `ConversationService`에서 직접 처리해야 함 (파일 첨부하며 요청하는 케이스에서 "사용자 요청:" 부분만 저장하기 위해)
 
 **선택 이유**:
 

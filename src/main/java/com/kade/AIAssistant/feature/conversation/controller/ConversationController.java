@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다. USER-ID 헤더 검증은 앞단 필터(config.UserIdRequiredFilter)에서 수행한다.
+ * AI 를 기능형으로 활용할 수 있는 컨트롤러 입니다. USER-ID 헤더 검증은 앞단 필터(common.filters.UserIdRequiredFilter)에서 수행한다.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class ConversationController {
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     public SseEmitter conversationStream(
             @RequestBody @Valid AssistantRequest request,
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
+            @RequestHeader(value = "USER-ID") String userIdHeader,
             HttpServletRequest httpRequest
     ) {
         log.info("""
@@ -75,7 +75,7 @@ public class ConversationController {
      */
     @GetMapping("")
     public ResponseEntity<?> getConversations(
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader
+            @RequestHeader(value = "USER-ID") String userIdHeader
     ) {
         return ResponseEntity.ok(conversationService.getConversations(userIdHeader));
     }
@@ -84,7 +84,7 @@ public class ConversationController {
     public SseEmitter conversationStreamWithFile(
             @RequestPart("file") MultipartFile file,
             @RequestPart("request") String requestJson,
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
+            @RequestHeader(value = "USER-ID") String userIdHeader,
             HttpServletRequest httpRequest
     ) {
         log.info("[SSE 스트리밍 파일 첨부 요청] 파일명: {}", file.getOriginalFilename());
@@ -165,7 +165,7 @@ public class ConversationController {
     @GetMapping("/{conversationId}")
     public ResponseEntity<?> getConversation(
             @PathVariable String conversationId,
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
+            @RequestHeader(value = "USER-ID") String userIdHeader,
             @RequestParam(value = "limit", required = false) Integer limit,
             @RequestParam(value = "beforeTimestamp", required = false) java.time.Instant beforeTimestamp
     ) {
@@ -176,7 +176,7 @@ public class ConversationController {
     @DeleteMapping("/{conversationId}")
     public ResponseEntity<?> deleteConversation(
             @PathVariable String conversationId,
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader
+            @RequestHeader(value = "USER-ID") String userIdHeader
     ) {
         boolean deleted = conversationService.deleteConversation(userIdHeader, conversationId);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
@@ -185,7 +185,7 @@ public class ConversationController {
     @PatchMapping("/{conversationId}")
     public ResponseEntity<Void> changeSubject(
             @PathVariable String conversationId,
-            @RequestHeader(value = "USER-ID", required = true) String userIdHeader,
+            @RequestHeader(value = "USER-ID") String userIdHeader,
             @RequestBody @Valid ChangeSubjectRequest request
     ) {
         conversationService.changeSubject(userIdHeader, conversationId, request.subject());

@@ -6,6 +6,7 @@ import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.ollama.factory.OllamaChatModelFactory;
 import io.opentelemetry.api.trace.Span;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -44,23 +45,12 @@ public class ModelExecuteService {
     /**
      * AI 모델 스트리밍 생성 - ChatClient 고수준 API 사용
      */
-    public Flux<ChatResponse> stream(AssistantRequest request) {
-        // 검색/필터용 trace-level attribute (gateway가 모르는 값은 앱에서 세팅)
+    public Flux<ChatResponse> stream(String userId, AssistantRequest request) {
         Span.current().setAttribute("langfuse.trace.metadata.promptType", request.promptType().name());
 
-        // Langfuse 또는 Redis 에서 프롬프트 템플릿 가져옴
-        LangfusePromptTemplate langfusePromptTemplate = promptService.getLangfusePrompt(request.promptType());
-        // 시스템 프롬프트 생성
-        Message systemPrompt = promptService.getSystemPrompt(langfusePromptTemplate, request);
-        // 옵션
-        OllamaChatOptions options = langfusePromptTemplate.getOllamaChatOptions(MODEL_NAME);
-
-        // 유저 프롬프트
-        Message userPrompt = UserMessage.builder()
-                .text(request.question())
-                .build();
-
-        Prompt prompt = new Prompt(List.of(systemPrompt, userPrompt));
+        LangfusePromptTemplate template = promptService.getLangfusePrompt(request.promptType());
+        Prompt prompt = buildPrompt(userId, request, template);
+        OllamaChatOptions options = template.getOllamaChatOptions(MODEL_NAME);
 
         // 기존 팩토리로 ChatModel 생성 (기본 옵션 포함)
         OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, request.promptType(), options);
@@ -82,6 +72,15 @@ public class ModelExecuteService {
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
                 .chatResponse();
+    }
+
+    /** 고정 system + (선택) 사용자 선호 system + user 메시지 순으로 Prompt 생성 */
+    private Prompt buildPrompt(String userId, AssistantRequest request, LangfusePromptTemplate template) {
+        List<Message> messages = new ArrayList<>();
+        messages.add(promptService.getSystemPrompt(template, request));
+        promptService.getUserPreferencePrompt(userId).ifPresent(messages::add);
+        messages.add(UserMessage.builder().text(request.question()).build());
+        return new Prompt(messages);
     }
 
     /**

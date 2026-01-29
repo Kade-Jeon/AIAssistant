@@ -233,7 +233,7 @@ public class RedisChatMemory implements ChatMemory {
     }
 
     private String cacheKey(String conversationId) {
-        return String.format("%s:%s", RedisKeyPrefix.CONTEXT, conversationId);
+        return String.format("%s:%s", RedisKeyPrefix.CHAT_MEMORY, conversationId);
     }
 
 
@@ -261,7 +261,7 @@ public class RedisChatMemory implements ChatMemory {
         // Message와 timestamp를 매핑
         java.util.Map<String, java.time.Instant> timestampMap = new java.util.HashMap<>();
         for (ChatMessageEntity entity : entities) {
-            String key = createMessageKey(entity.getType(), entity.getContent());
+            String key = createMessageKey(entity.getType().name(), entity.getContent());
             timestampMap.put(key, entity.getTimestamp());
         }
 

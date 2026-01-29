@@ -27,7 +27,7 @@ public class PromptTemplateProvider {
     public LangfusePromptTemplate getSystemPromptTemplate(PromptType promptType) {
         log.info("[PromptTemplateProvider] Redis 캐시 조회: {}", promptType.name());
 
-        String cacheKey = String.format("%s:{%s}", RedisKeyPrefix.PROMPT, promptType.name());
+        String cacheKey = String.format("%s:{%s}", RedisKeyPrefix.SYSTEM_PROMPT, promptType.name());
 
         try {
             // 1. Redis에서 캐시 조회

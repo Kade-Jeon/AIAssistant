@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -100,7 +99,7 @@ public class ConversationService {
         // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
         saveUserMessage(conversationId, request.question());
 
-        Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
+        Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
         sessionInfo.setModel(MODEL_NAME);
@@ -156,7 +155,7 @@ public class ConversationService {
         // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
         UUID userMessageId = saveUserMessage(conversationId, request.question());
 
-        Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
+        Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
         sessionInfo.setModel(MODEL_NAME);
@@ -217,7 +216,7 @@ public class ConversationService {
         // USER 메시지를 우리 테이블에 저장 (AI 호출 전)
         UUID userMessageId = saveUserMessage(conversationId, request.question());
 
-        Flux<ChatResponse> stream = modelExecuteService.stream(requestToUse);
+        Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
         sessionInfo.setModel(MODEL_NAME);
@@ -299,8 +298,8 @@ public class ConversationService {
         List<ChatAttachmentEntity> allAttachments = chatAttachmentRepository
                 .findByConversationIdOrderByCreatedAtDesc(conversationId);
 
-        log.info("대화 조회 - conversationId: {}, 메시지 수: {}, 첨부파일 수: {}",
-                conversationId, recent.size(), allAttachments.size());
+        log.info("대화 조회 - userId: {}, conversationId: {}, 메시지 수: {}, 첨부파일 수: {}",
+                userId, conversationId, recent.size(), allAttachments.size());
 
         Map<UUID, List<AttachmentDto>> attachmentsByMessageId = allAttachments.stream()
                 .collect(Collectors.groupingBy(
@@ -315,9 +314,9 @@ public class ConversationService {
         List<Message> messagesForCache = new ArrayList<>(recent.size());
         for (int i = recent.size() - 1; i >= 0; i--) {
             ChatMessageEntity e = recent.get(i);
-            UUID messageId = e.getMessageId();
+            UUID messageId = e.getId();
             if (messageId == null) {
-                log.warn("메시지 message_id가 null입니다 - conversationId: {}, timestamp: {}, type: {}",
+                log.warn("메시지 id가 null입니다 - conversationId: {}, timestamp: {}, type: {}",
                         conversationId, e.getTimestamp(), e.getType());
             }
             List<AttachmentDto> attachments = messageId != null
@@ -325,7 +324,7 @@ public class ConversationService {
                     : Collections.emptyList();
 
             result.add(new ConversationMessageDto(
-                    e.getType().toLowerCase(),
+                    e.getType().getValue(),
                     e.getContent(),
                     e.getTimestamp(),
                     attachments.isEmpty() ? null : attachments));
@@ -357,10 +356,14 @@ public class ConversationService {
     }
 
     private static Message toChatMemoryMessage(ChatMessageEntity e) {
-        // Spring AI MessageType.fromValue()는 소문자("user","assistant" 등)를 기대함. DB는 대문자 저장.
-        MessageType type = MessageType.fromValue(e.getType().toLowerCase());
+        com.kade.AIAssistant.common.enums.MessageType type = e.getType();
         String text = e.getContent();
-        return switch (type) {
+
+        // Spring AI MessageType으로 변환
+        org.springframework.ai.chat.messages.MessageType springAiType =
+                org.springframework.ai.chat.messages.MessageType.fromValue(type.getValue());
+
+        return switch (springAiType) {
             case SYSTEM -> new SystemMessage(text);
             case USER -> new UserMessage(text);
             case ASSISTANT -> new AssistantMessage(text);
@@ -384,14 +387,14 @@ public class ConversationService {
 
         ChatMessageEntity entity = new ChatMessageEntity(
                 conversationId,
-                "USER",
+                com.kade.AIAssistant.common.enums.MessageType.USER,
                 contentToStore,
                 Instant.now()
         );
         ChatMessageEntity saved = chatMessageRepository.save(entity);
-        log.debug("USER 메시지 저장 완료 - conversationId: {}, messageId: {}",
-                conversationId, saved.getMessageId());
-        return saved.getMessageId();
+        log.debug("USER 메시지 저장 완료 - conversationId: {}, id: {}",
+                conversationId, saved.getId());
+        return saved.getId();
     }
 
     /**
@@ -407,13 +410,13 @@ public class ConversationService {
 
         ChatMessageEntity entity = new ChatMessageEntity(
                 conversationId,
-                "ASSISTANT",
+                com.kade.AIAssistant.common.enums.MessageType.ASSISTANT,
                 content,
                 Instant.now()
         );
         chatMessageRepository.save(entity);
-        log.info("ASSISTANT 메시지 저장 완료 - conversationId: {}, messageId: {}, content 길이: {}",
-                conversationId, entity.getMessageId(), content.length());
+        log.info("ASSISTANT 메시지 저장 완료 - conversationId: {}, id: {}, content 길이: {}",
+                conversationId, entity.getId(), content.length());
     }
 
     /**
@@ -455,8 +458,12 @@ public class ConversationService {
         log.info("파일 첨부 메타데이터 저장 시작 - conversationId: {}, messageId: {}, filename: {}",
                 conversationId, userMessageId, filename);
 
+        // ChatMessageEntity 조회
+        ChatMessageEntity messageEntity = chatMessageRepository.findById(userMessageId)
+                .orElseThrow(() -> new RuntimeException("메시지를 찾을 수 없습니다: " + userMessageId));
+
         ChatAttachmentEntity attachment = new ChatAttachmentEntity(
-                userMessageId, conversationId, filename, mimeType, size);
+                messageEntity, conversationId, filename, mimeType, size);
         ChatAttachmentEntity saved = chatAttachmentRepository.save(attachment);
         log.info("파일 첨부 메타데이터 저장 완료 - conversationId: {}, messageId: {}, filename: {}, savedId: {}",
                 conversationId, userMessageId, filename, saved.getId());

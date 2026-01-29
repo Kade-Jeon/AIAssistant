@@ -1,9 +1,10 @@
 package com.kade.AIAssistant.infra.redis.enums;
 
 public enum RedisKeyPrefix {
-    PROMPT("prompt"),
-    CONTEXT("context");
-    
+    SYSTEM_PROMPT("system_prompt"),
+    USER_PREFERENCE_PROMPT("user_preference_prompt"),
+    CHAT_MEMORY("chat_memory");
+
     private final String value;
 
     RedisKeyPrefix(String value) {
