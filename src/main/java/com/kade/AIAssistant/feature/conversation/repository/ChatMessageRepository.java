@@ -21,6 +21,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     List<ChatMessageEntity> findByConversationIdOrderByTimestampDesc(String conversationId, Pageable pageable);
 
     /**
+     * conversationId의 가장 최근 USER 타입 메시지 ID 조회 (Idempotency claim 시 사용)
+     */
+    Optional<ChatMessageEntity> findFirstByConversationIdAndTypeOrderByTimestampDesc(
+            String conversationId, MessageType type);
+
+    /**
      * conversationId로 최신 메시지 조회 (기본 메서드)
      */
     default List<ChatMessageEntity> findRecentByConversationId(String conversationId, Pageable pageable) {

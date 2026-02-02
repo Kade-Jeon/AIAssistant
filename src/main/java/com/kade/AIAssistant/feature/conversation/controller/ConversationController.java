@@ -48,6 +48,7 @@ public class ConversationController {
     public SseEmitter conversationStream(
             @RequestBody @Valid AssistantRequest request,
             @RequestHeader(value = "USER-ID") String userIdHeader,
+            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
             HttpServletRequest httpRequest
     ) {
         log.info("""
@@ -61,7 +62,7 @@ public class ConversationController {
 
         try {
             emitter.send(SseEmitter.event().name("open").data("connected"));
-            conversationService.streamToSse(userIdHeader, request, emitter);
+            conversationService.streamToSse(userIdHeader, request, emitter, idempotencyKey);
         } catch (Exception e) {
             log.error("SSE 스트리밍 초기화 실패", e);
             emitter.completeWithError(e);

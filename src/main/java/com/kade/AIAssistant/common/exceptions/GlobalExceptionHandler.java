@@ -2,6 +2,7 @@ package com.kade.AIAssistant.common.exceptions;
 
 import com.kade.AIAssistant.common.exceptions.customs.AiModelException;
 import com.kade.AIAssistant.common.exceptions.customs.ForbiddenException;
+import com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException;
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.common.exceptions.customs.ModelNotFoundException;
 import com.kade.AIAssistant.common.exceptions.customs.PromptNotFoundException;
@@ -135,6 +136,29 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+    /**
+     * Idempotency-Key 충돌 (동일 키로 이미 처리 중이거나 완료된 경우) - 409 Conflict
+     */
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<ErrorResponse> handleIdempotencyConflictException(
+            IdempotencyConflictException e,
+            HttpServletRequest request) {
+
+        log.warn("Idempotency 충돌: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                e.getErrorCode(),
+                e.getMessage(),
+                null,
+                request.getRequestURI(),
+                HttpStatus.CONFLICT.value()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(errorResponse);
     }
 

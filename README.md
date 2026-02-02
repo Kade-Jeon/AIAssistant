@@ -590,9 +590,9 @@ Phase 1: 현재 (MVP)
 └── ✅ Langfuse 관찰성
 
 Phase 2: 단기 목표
-├── 🔲 Vector DB 기반 RAG (Milvus/Pinecone)
+├── 🔲 Vector DB 기반 RAG
 ├── 🔲 Rate Limiting (Redis 기반)
-├── 🔲 스트리밍 재시도 로직
+├── ✅ 스트리밍 재시도 로직
 ├── 🔲 ElasticSearch 내용 검색 도입
 └── 🔲 대화 내보내기 (PDF/JSON)
 

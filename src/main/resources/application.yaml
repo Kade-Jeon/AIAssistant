@@ -69,6 +69,13 @@ app:
     cache-limit: 20  # Redis 캐시에 저장할 최대 메시지 개수
     default-limit: 20  # API 기본 조회 개수
     max-limit: 100  # API 최대 조회 개수
+  streaming:
+    retry:
+      max-attempts: 3  # Ollama 스트리밍 호출 최대 재시도 횟수
+      initial-backoff-ms: 100  # 첫 재시도 지연 시간(밀리초)
+      max-backoff-ms: 2000  # 최대 재시도 지연 시간(밀리초)
+  idempotency:
+    ttl-hours: 24  # Idempotency-Key 상태 보관 시간(시간)
 
 # OpenTelemetry 설정 (Langfuse는 Traces만 수집하므로 Logs/Metrics 전송 비활성화)
 otel:

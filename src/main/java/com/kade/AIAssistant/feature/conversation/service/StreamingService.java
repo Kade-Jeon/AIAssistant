@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.utils.StreamingChunkProcessor;
 import com.kade.AIAssistant.domain.response.ChatCompletionChunk;
 import com.kade.AIAssistant.domain.response.ProcessedChunk;
+import com.kade.AIAssistant.domain.response.SseErrorPayload;
 import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -108,7 +109,7 @@ public class StreamingService {
                     }
                 },
 
-                // onError: 오류 발생 시
+                // onError: 오류 발생 시 (구조화된 에러 응답 전송)
                 error -> {
                     if (!isConnected.get()) {
                         return;
@@ -116,8 +117,13 @@ public class StreamingService {
 
                     log.error("SSE 스트리밍 중 오류 발생", error);
                     try {
+                        SseErrorPayload payload = SseErrorPayload.of(
+                                "STREAMING_FAILED",
+                                "AI 응답 생성 중 오류가 발생했습니다.",
+                                true
+                        );
                         emitter.send(SseEmitter.event()
-                                .data("AI 응답 생성 중 오류가 발생했습니다.")
+                                .data(objectMapper.writeValueAsString(payload))
                                 .name("error"));
                     } catch (Exception e) {
                         log.error("SSE 에러 메시지 전송 실패", e);

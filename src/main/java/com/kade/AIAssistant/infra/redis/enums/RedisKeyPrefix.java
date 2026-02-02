@@ -3,7 +3,8 @@ package com.kade.AIAssistant.infra.redis.enums;
 public enum RedisKeyPrefix {
     SYSTEM_PROMPT("system_prompt"),
     USER_PREFERENCE_PROMPT("user_preference_prompt"),
-    CHAT_MEMORY("chat_memory");
+    CHAT_MEMORY("chat_memory"),
+    IDEMPOTENCY("idempotency");
 
     private final String value;
 

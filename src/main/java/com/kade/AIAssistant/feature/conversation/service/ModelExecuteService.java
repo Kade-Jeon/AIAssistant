@@ -6,6 +6,7 @@ import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.ollama.factory.OllamaChatModelFactory;
 import io.opentelemetry.api.trace.Span;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
+import reactor.util.retry.Retry;
 
 @Service
 @Slf4j
@@ -37,6 +39,15 @@ public class ModelExecuteService {
 
     @Value("${app.subject-generation.timeout-seconds:30}")
     private int subjectGenerationTimeoutSeconds;
+
+    @Value("${app.streaming.retry.max-attempts:3}")
+    private int retryMaxAttempts;
+
+    @Value("${app.streaming.retry.initial-backoff-ms:100}")
+    private int retryInitialBackoffMs;
+
+    @Value("${app.streaming.retry.max-backoff-ms:2000}")
+    private int retryMaxBackoffMs;
 
     private final PromptService promptService;
     private final OllamaChatModelFactory chatModelFactory;
@@ -71,7 +82,14 @@ public class ModelExecuteService {
                 .options(options)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
-                .chatResponse();
+                .chatResponse()
+                .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryInitialBackoffMs))
+                        .maxBackoff(Duration.ofMillis(retryMaxBackoffMs))
+                        .doBeforeRetry(signal -> 
+                                log.warn("Ollama 스트리밍 호출 재시도 {}/{}: {}", 
+                                        signal.totalRetriesInARow() + 1, 
+                                        retryMaxAttempts, 
+                                        signal.failure().getMessage())));
     }
 
     /** 고정 system + (선택) 사용자 선호 system + user 메시지 순으로 Prompt 생성 */
