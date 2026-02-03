@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.domain.response;
+package com.kade.AIAssistant.feature.conversation.dto.response;
 
 public record UsageInfo(
         Integer promptTokens,

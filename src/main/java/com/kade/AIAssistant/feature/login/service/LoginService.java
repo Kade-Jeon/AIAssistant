@@ -1,8 +1,8 @@
 package com.kade.AIAssistant.feature.login.service;
 
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
-import com.kade.AIAssistant.domain.reqeust.LoginRequest;
-import com.kade.AIAssistant.domain.response.LoginResponse;
+import com.kade.AIAssistant.feature.login.dto.request.LoginRequest;
+import com.kade.AIAssistant.feature.login.dto.response.LoginResponse;
 import com.kade.AIAssistant.feature.preference.entity.UserEntity;
 import com.kade.AIAssistant.feature.preference.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

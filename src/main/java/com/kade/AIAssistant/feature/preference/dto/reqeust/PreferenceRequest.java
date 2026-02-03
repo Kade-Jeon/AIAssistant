@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.domain.reqeust;
+package com.kade.AIAssistant.feature.preference.dto.reqeust;
 
 import javax.validation.constraints.Max;
 

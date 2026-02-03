@@ -42,7 +42,7 @@ spring:
   # Ollama
   ai:
     ollama:
-      base-url: http://192.168.200.166:11434
+      base-url: http://192.168.200.199:11434
       chat:
         model: qwen2.5:1.5b
     # JDBC Chat Memory: CustomChatMemoryRepository 사용 (CHAT_MESSAGE 테이블)

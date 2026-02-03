@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.domain.response;
+package com.kade.AIAssistant.feature.preference.dto.response;
 
 public record PreferenceResponse(
         String nickname,

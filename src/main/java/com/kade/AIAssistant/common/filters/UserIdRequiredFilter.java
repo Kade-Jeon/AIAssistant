@@ -1,7 +1,7 @@
 package com.kade.AIAssistant.common.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kade.AIAssistant.domain.response.ErrorResponse;
+import com.kade.AIAssistant.feature.conversation.dto.response.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ public class UserIdRequiredFilter extends OncePerRequestFilter {
 
     private static final String HEADER_USER_ID = "USER-ID";
     private static final String MESSAGE_USER_ID_REQUIRED = "USER-ID 헤더를 제공해주세요.";
-    
+
     /**
      * USER-ID 헤더 검증이 필요한 API 경로 목록
      */
@@ -39,7 +39,7 @@ public class UserIdRequiredFilter extends OncePerRequestFilter {
 
     /**
      * 필터링 대상 경로가 아니면 필터를 적용하지 않음
-     * 
+     *
      * @param request HTTP 요청
      * @return 필터링 대상 경로면 false (필터 적용), 아니면 true (필터 적용 안 함)
      */

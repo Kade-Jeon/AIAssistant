@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.domain.reqeust;
+package com.kade.AIAssistant.feature.conversation.dto.request;
 
 import com.kade.AIAssistant.common.enums.PromptType;
 import jakarta.validation.constraints.NotBlank;

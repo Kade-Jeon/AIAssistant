@@ -1,7 +1,7 @@
 package com.kade.AIAssistant.feature.preference.service;
 
-import com.kade.AIAssistant.domain.reqeust.PreferenceRequest;
-import com.kade.AIAssistant.domain.response.PreferenceResponse;
+import com.kade.AIAssistant.feature.preference.dto.reqeust.PreferenceRequest;
+import com.kade.AIAssistant.feature.preference.dto.response.PreferenceResponse;
 import com.kade.AIAssistant.feature.preference.entity.UserEntity;
 import com.kade.AIAssistant.feature.preference.entity.UserPreferenceEntity;
 import com.kade.AIAssistant.feature.preference.repository.UserPreferenceRepository;

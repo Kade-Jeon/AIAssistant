@@ -1,7 +1,7 @@
 package com.kade.AIAssistant.common.utils;
 
-import com.kade.AIAssistant.domain.response.ProcessedChunk;
-import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
+import com.kade.AIAssistant.feature.conversation.dto.response.ProcessedChunk;
+import com.kade.AIAssistant.feature.conversation.dto.response.StreamingSessionInfo;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

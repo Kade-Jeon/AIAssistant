@@ -6,7 +6,7 @@ import com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictExcepti
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.common.exceptions.customs.ModelNotFoundException;
 import com.kade.AIAssistant.common.exceptions.customs.PromptNotFoundException;
-import com.kade.AIAssistant.domain.response.ErrorResponse;
+import com.kade.AIAssistant.feature.conversation.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;

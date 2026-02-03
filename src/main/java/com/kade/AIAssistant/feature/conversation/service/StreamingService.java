@@ -2,10 +2,10 @@ package com.kade.AIAssistant.feature.conversation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.utils.StreamingChunkProcessor;
-import com.kade.AIAssistant.domain.response.ChatCompletionChunk;
-import com.kade.AIAssistant.domain.response.ProcessedChunk;
-import com.kade.AIAssistant.domain.response.SseErrorPayload;
-import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
+import com.kade.AIAssistant.feature.conversation.dto.response.ChatCompletionChunk;
+import com.kade.AIAssistant.feature.conversation.dto.response.ProcessedChunk;
+import com.kade.AIAssistant.feature.conversation.dto.response.SseErrorPayload;
+import com.kade.AIAssistant.feature.conversation.dto.response.StreamingSessionInfo;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;

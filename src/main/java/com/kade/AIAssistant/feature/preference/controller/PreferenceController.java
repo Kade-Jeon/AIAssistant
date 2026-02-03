@@ -1,6 +1,6 @@
 package com.kade.AIAssistant.feature.preference.controller;
 
-import com.kade.AIAssistant.domain.reqeust.PreferenceRequest;
+import com.kade.AIAssistant.feature.preference.dto.reqeust.PreferenceRequest;
 import com.kade.AIAssistant.feature.preference.service.PreferenceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

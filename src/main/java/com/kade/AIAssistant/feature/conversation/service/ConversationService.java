@@ -1,18 +1,17 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
 import com.kade.AIAssistant.common.exceptions.customs.ForbiddenException;
-import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
-import com.kade.AIAssistant.domain.response.AttachmentDto;
-import com.kade.AIAssistant.domain.response.ConversationMessageDto;
-import com.kade.AIAssistant.domain.response.StreamingSessionInfo;
-import com.kade.AIAssistant.domain.response.UserConversationItemDto;
+import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
+import com.kade.AIAssistant.feature.conversation.dto.response.AttachmentDto;
+import com.kade.AIAssistant.feature.conversation.dto.response.ConversationMessageDto;
+import com.kade.AIAssistant.feature.conversation.dto.response.StreamingSessionInfo;
+import com.kade.AIAssistant.feature.conversation.dto.response.UserConversationItemDto;
 import com.kade.AIAssistant.feature.conversation.entity.ChatAttachmentEntity;
 import com.kade.AIAssistant.feature.conversation.entity.ChatMessageEntity;
 import com.kade.AIAssistant.feature.conversation.entity.UserConversationEntity;
 import com.kade.AIAssistant.feature.conversation.repository.ChatAttachmentRepository;
 import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepository;
 import com.kade.AIAssistant.feature.conversation.repository.UserConversationRepository;
-import com.kade.AIAssistant.feature.conversation.service.IdempotencyState;
 import com.kade.AIAssistant.infra.redis.context.RedisChatMemory;
 import java.io.IOException;
 import java.time.Instant;
@@ -76,8 +75,8 @@ public class ConversationService {
     }
 
     /**
-     * [SSE 스트리밍] AI 채팅 응답 생성 (Idempotency-Key 지원).
-     * X-Idempotency-Key가 있으면 동일 키로 재요청 시 사용자 메시지 중복 저장을 방지하고, 이미 완료된 요청이면 already_completed 이벤트로 응답한다.
+     * [SSE 스트리밍] AI 채팅 응답 생성 (Idempotency-Key 지원). X-Idempotency-Key가 있으면 동일 키로 재요청 시 사용자 메시지 중복 저장을 방지하고, 이미 완료된 요청이면
+     * already_completed 이벤트로 응답한다.
      */
     @Transactional
     public String streamToSse(String userId, AssistantRequest request, SseEmitter emitter, String idempotencyKey) {
@@ -142,7 +141,8 @@ public class ConversationService {
             saveUserMessage(conversationId, request.question());
             if (StringUtils.hasText(idempotencyKey)) {
                 UUID userMessageId = chatMessageRepository
-                        .findFirstByConversationIdAndTypeOrderByTimestampDesc(conversationId, com.kade.AIAssistant.common.enums.MessageType.USER)
+                        .findFirstByConversationIdAndTypeOrderByTimestampDesc(conversationId,
+                                com.kade.AIAssistant.common.enums.MessageType.USER)
                         .map(ChatMessageEntity::getId)
                         .orElse(null);
                 boolean claimed = idempotencyService.claim(userId, idempotencyKey, conversationId, userMessageId);
@@ -162,9 +162,10 @@ public class ConversationService {
                 ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
                 request.subject())
                 : new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject());
+                        request.subject());
 
-        log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}, idempotencyKey: {}", conversationId, request.question(), idempotencyKey);
+        log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}, idempotencyKey: {}", conversationId, request.question(),
+                idempotencyKey);
 
         Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
         if (StringUtils.hasText(idempotencyKey)) {

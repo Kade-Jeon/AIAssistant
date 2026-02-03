@@ -2,8 +2,8 @@ package com.kade.AIAssistant.common.prompt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.enums.PromptType;
-import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
-import com.kade.AIAssistant.domain.response.PreferenceResponse;
+import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
+import com.kade.AIAssistant.feature.preference.dto.response.PreferenceResponse;
 import com.kade.AIAssistant.feature.preference.service.PreferenceService;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;

@@ -2,7 +2,7 @@ package com.kade.AIAssistant.feature.conversation.service;
 
 import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.common.prompt.PromptService;
-import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
+import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.ollama.factory.OllamaChatModelFactory;
 import io.opentelemetry.api.trace.Span;
@@ -85,14 +85,16 @@ public class ModelExecuteService {
                 .chatResponse()
                 .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryInitialBackoffMs))
                         .maxBackoff(Duration.ofMillis(retryMaxBackoffMs))
-                        .doBeforeRetry(signal -> 
-                                log.warn("Ollama 스트리밍 호출 재시도 {}/{}: {}", 
-                                        signal.totalRetriesInARow() + 1, 
-                                        retryMaxAttempts, 
+                        .doBeforeRetry(signal ->
+                                log.warn("Ollama 스트리밍 호출 재시도 {}/{}: {}",
+                                        signal.totalRetriesInARow() + 1,
+                                        retryMaxAttempts,
                                         signal.failure().getMessage())));
     }
 
-    /** 고정 system + (선택) 사용자 선호 system + user 메시지 순으로 Prompt 생성 */
+    /**
+     * 고정 system + (선택) 사용자 선호 system + user 메시지 순으로 Prompt 생성
+     */
     private Prompt buildPrompt(String userId, AssistantRequest request, LangfusePromptTemplate template) {
         List<Message> messages = new ArrayList<>();
         messages.add(promptService.getSystemPrompt(template, request));

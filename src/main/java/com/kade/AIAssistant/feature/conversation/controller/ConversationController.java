@@ -3,8 +3,8 @@ package com.kade.AIAssistant.feature.conversation.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
-import com.kade.AIAssistant.domain.reqeust.AssistantRequest;
-import com.kade.AIAssistant.domain.reqeust.ChangeSubjectRequest;
+import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
+import com.kade.AIAssistant.feature.conversation.dto.request.ChangeSubjectRequest;
 import com.kade.AIAssistant.feature.conversation.service.ConversationService;
 import com.kade.AIAssistant.feature.conversation.service.RagService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -125,16 +125,16 @@ public class ConversationController {
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
             String mimeType = file.getContentType();
             Long fileSize = file.getSize();
-            
+
             // conversationId는 streamToSseWithUserMessageId에서 결정되므로, AtomicReference로 전달
-            java.util.concurrent.atomic.AtomicReference<String> conversationIdRef = 
+            java.util.concurrent.atomic.AtomicReference<String> conversationIdRef =
                     new java.util.concurrent.atomic.AtomicReference<>();
-            
+
             // 스트리밍 완료 후 첨부파일 메타데이터 저장 (userMessageId 직접 사용)
             java.util.function.Consumer<java.util.UUID> saveAttachmentCallback = (userMessageId) -> {
                 String conversationId = conversationIdRef.get();
                 if (userMessageId != null && conversationId != null) {
-                    log.info("스트리밍 완료 후 첨부파일 메타데이터 저장 시작 - conversationId: {}, userMessageId: {}", 
+                    log.info("스트리밍 완료 후 첨부파일 메타데이터 저장 시작 - conversationId: {}, userMessageId: {}",
                             conversationId, userMessageId);
                     conversationService.saveAttachmentMetadata(
                             conversationId,
@@ -144,15 +144,16 @@ public class ConversationController {
                             fileSize
                     );
                 } else {
-                    log.warn("스트리밍 완료 콜백 실행 시 conversationId 또는 userMessageId가 null입니다 - conversationId: {}, userMessageId: {}", 
+                    log.warn(
+                            "스트리밍 완료 콜백 실행 시 conversationId 또는 userMessageId가 null입니다 - conversationId: {}, userMessageId: {}",
                             conversationId, userMessageId);
                 }
             };
-            
+
             // streamToSseWithUserMessageId 호출 (userMessageId를 콜백으로 전달)
             String conversationId = conversationService.streamToSseWithUserMessageId(
                     userIdHeader, fileRequest, emitter, saveAttachmentCallback);
-            
+
             // conversationId 설정 (비동기 콜백에서 사용)
             conversationIdRef.set(conversationId);
         } catch (Exception e) {

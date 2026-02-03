@@ -1,7 +1,7 @@
 package com.kade.AIAssistant.feature.login.controller;
 
-import com.kade.AIAssistant.domain.reqeust.LoginRequest;
-import com.kade.AIAssistant.domain.response.LoginResponse;
+import com.kade.AIAssistant.feature.login.dto.request.LoginRequest;
+import com.kade.AIAssistant.feature.login.dto.response.LoginResponse;
 import com.kade.AIAssistant.feature.login.service.LoginService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

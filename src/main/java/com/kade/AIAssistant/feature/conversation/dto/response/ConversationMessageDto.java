@@ -1,4 +1,4 @@
-package com.kade.AIAssistant.domain.response;
+package com.kade.AIAssistant.feature.conversation.dto.response;
 
 import java.time.Instant;
 import java.util.List;
