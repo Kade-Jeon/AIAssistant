@@ -1,5 +1,6 @@
 package com.kade.AIAssistant.common.utils;
 
+import com.kade.AIAssistant.common.enums.ModelBlockConfig;
 import com.kade.AIAssistant.feature.conversation.dto.response.ProcessedChunk;
 import com.kade.AIAssistant.feature.conversation.dto.response.StreamingSessionInfo;
 import java.util.List;
@@ -26,7 +27,8 @@ public class StreamingChunkProcessor {
 
         // 텍스트 추출 및 정제
         String rawText = ChatResponseMapper.extractRawText(chatResponse);
-        String cleanText = ThinkBlockProcessor.stripThinkBlocks(rawText);
+        // TODO: 추후 모델별로 다른 BlockConfig를 사용하도록 확장 가능
+        String cleanText = BlockProcessor.stripBlocks(rawText, ModelBlockConfig.CLAUDE);
 
         // tool_calls 추출
         List<Map<String, Object>> toolCalls = ChatResponseMapper.extractToolCalls(chatResponse);

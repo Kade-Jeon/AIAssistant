@@ -5,6 +5,7 @@ import org.springframework.ai.ollama.api.ThinkOption.ThinkLevel;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PromptOptions(
+        String model,
         Double temperature,
         Integer topK,
         Double topP,

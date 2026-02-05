@@ -1,6 +1,8 @@
 package com.kade.AIAssistant.infra.redis.prompt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +12,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PromptCacheService {
+public class RedisCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * Key-Value 설정
@@ -51,16 +54,31 @@ public class PromptCacheService {
 
     /**
      * 특정 타입으로 값 조회
+     * <p>GenericJackson2JsonRedisSerializer 역직렬화 시 LinkedHashMap이 반환되는 경우,
+     * ObjectMapper로 타겟 타입으로 변환 후 반환.
      *
      * @param key  조회할 Key
      * @param type 반환받을 타입 클래스
      * @param <T>  반환 타입
-     * @return 저장된 값 (없거나 타입 불일치 시 Optional.empty)
+     * @return 저장된 값 (없으면 Optional.empty)
      */
     public <T> Optional<T> get(String key, Class<T> type) {
         Object value = redisTemplate.opsForValue().get(key);
-        if (value != null && type.isInstance(value)) {
+        if (value == null) {
+            return Optional.empty();
+        }
+        if (type.isInstance(value)) {
             return Optional.of(type.cast(value));
+        }
+        if (value instanceof LinkedHashMap<?, ?> map) {
+            try {
+                T converted = objectMapper.convertValue(map, type);
+                log.debug("[RedisCacheService] LinkedHashMap → {} 변환 성공: {}", type.getSimpleName(), key);
+                return Optional.of(converted);
+            } catch (IllegalArgumentException e) {
+                log.warn("[RedisCacheService] LinkedHashMap → {} 변환 실패: key={}, cause={}", type.getSimpleName(), key, e.getMessage());
+                return Optional.empty();
+            }
         }
         return Optional.empty();
     }

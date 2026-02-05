@@ -6,7 +6,7 @@ import com.kade.AIAssistant.common.exceptions.customs.PromptNotFoundException;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfuseClient;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;
-import com.kade.AIAssistant.infra.redis.prompt.PromptCacheService;
+import com.kade.AIAssistant.infra.redis.prompt.RedisCacheService;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PromptTemplateProvider {
 
-    private final PromptCacheService promptCacheService;
+    private final RedisCacheService promptCacheService;
     private final LangfuseClient langfuseClient;
     private final ObjectMapper objectMapper;
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.feature.conversation.entity.ChatMessageEntity;
 import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepository;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;
-import com.kade.AIAssistant.infra.redis.prompt.PromptCacheService;
+import com.kade.AIAssistant.infra.redis.prompt.RedisCacheService;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,7 @@ public class RedisChatMemory implements ChatMemory {
     private static final TypeReference<List<MessageDto>> MESSAGE_LIST_TYPE = new TypeReference<List<MessageDto>>() {
     };
 
-    private final PromptCacheService cache;
+    private final RedisCacheService cache;
     private final ChatMemoryRepository repository;
     private final ObjectMapper objectMapper;
     private final ChatMessageRepository chatMessageRepository;

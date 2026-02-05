@@ -7,7 +7,7 @@ import com.kade.AIAssistant.feature.preference.dto.response.PreferenceResponse;
 import com.kade.AIAssistant.feature.preference.service.PreferenceService;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;
-import com.kade.AIAssistant.infra.redis.prompt.PromptCacheService;
+import com.kade.AIAssistant.infra.redis.prompt.RedisCacheService;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class PromptService {
     private static final Duration USER_PREFERENCE_CACHE_TTL = Duration.ofHours(1L);
 
     private final PromptTemplateProvider promptTemplateProvider;
-    private final PromptCacheService promptCacheService;
+    private final RedisCacheService promptCacheService;
     private final PreferenceService preferenceService;
     private final ObjectMapper objectMapper;
 

@@ -33,10 +33,6 @@ import reactor.util.retry.Retry;
 @RequiredArgsConstructor
 public class ModelExecuteService {
 
-    // TODO: 프롬프트(기능) 별로 동적으로 변동하여 사용할 수 있도록 변경할 것
-    @Value("${spring.ai.ollama.chat.model:default}")
-    private String MODEL_NAME;
-
     @Value("${app.subject-generation.timeout-seconds:30}")
     private int subjectGenerationTimeoutSeconds;
 
@@ -61,10 +57,11 @@ public class ModelExecuteService {
 
         LangfusePromptTemplate template = promptService.getLangfusePrompt(request.promptType());
         Prompt prompt = buildPrompt(userId, request, template);
-        OllamaChatOptions options = template.getOllamaChatOptions(MODEL_NAME);
+        OllamaChatOptions options = template.getOllamaChatOptions();
 
         // 기존 팩토리로 ChatModel 생성 (기본 옵션 포함)
-        OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, request.promptType(), options);
+        OllamaChatModel chatModel = chatModelFactory.getChatModel(template.config().model(), request.promptType(),
+                options);
 
         // ChatClient + MessageChatMemoryAdvisor (대화 기록 로드만 사용, 저장은 우리가 직접)
         // MessageChatMemoryAdvisor는 대화 시작 전 이전 메시지를 자동으로 로드하여 컨텍스트로 제공
@@ -115,18 +112,19 @@ public class ModelExecuteService {
         }
         try {
             // Langfuse 또는 Redis 에서 프롬프트 템플릿 가져옴
-            LangfusePromptTemplate langfusePromptTemplate = promptService.getLangfusePrompt(PromptType.SUBJECT);
+            LangfusePromptTemplate template = promptService.getLangfusePrompt(PromptType.SUBJECT);
 
             AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null, null);
             // 시스템 프롬프트 생성
-            Message systemPrompt = promptService.getSystemPrompt(langfusePromptTemplate, subRequest);
+            Message systemPrompt = promptService.getSystemPrompt(template, subRequest);
             // 옵션
-            OllamaChatOptions options = langfusePromptTemplate.getOllamaChatOptions(MODEL_NAME);
+            OllamaChatOptions options = template.getOllamaChatOptions();
             // 유저 프롬프트
             Message userPrompt = UserMessage.builder().text(question).build();
 
             Prompt prompt = new Prompt(List.of(systemPrompt, userPrompt));
-            OllamaChatModel chatModel = chatModelFactory.getChatModel(MODEL_NAME, PromptType.SUBJECT, options);
+            OllamaChatModel chatModel = chatModelFactory.getChatModel(template.config().model(), PromptType.SUBJECT,
+                    options);
 
             // ChatClient로 동기 호출(stream과 동일한 경로) + 타임아웃으로 무한 대기 방지
             ChatClient chatClient = ChatClient.builder(chatModel).build();

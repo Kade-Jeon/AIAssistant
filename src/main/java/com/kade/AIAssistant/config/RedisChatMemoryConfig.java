@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepository;
 import com.kade.AIAssistant.infra.redis.context.CustomChatMemoryRepository;
 import com.kade.AIAssistant.infra.redis.context.RedisChatMemory;
-import com.kade.AIAssistant.infra.redis.prompt.PromptCacheService;
+import com.kade.AIAssistant.infra.redis.prompt.RedisCacheService;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,13 +27,14 @@ public class RedisChatMemoryConfig {
 
     @Bean
     public RedisChatMemory redisChatMemory(
-            PromptCacheService promptCacheService,
+            RedisCacheService promptCacheService,
             ChatMemoryRepository chatMemoryRepository,
             ObjectMapper objectMapper,
             ChatMessageRepository chatMessageRepository,
             @Value("${app.conversation.cache-limit:20}") int cacheLimit
     ) {
-        return new RedisChatMemory(promptCacheService, chatMemoryRepository, objectMapper, chatMessageRepository, cacheLimit);
+        return new RedisChatMemory(promptCacheService, chatMemoryRepository, objectMapper, chatMessageRepository,
+                cacheLimit);
     }
 
     @Bean

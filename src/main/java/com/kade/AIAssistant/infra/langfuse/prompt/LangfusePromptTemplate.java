@@ -10,9 +10,9 @@ public record LangfusePromptTemplate(
         String prompt,
         PromptOptions config
 ) {
-    public OllamaChatOptions getOllamaChatOptions(String modelName) {
+    public OllamaChatOptions getOllamaChatOptions() {
         var builder = OllamaChatOptions.builder();
-        builder.model(modelName);
+        builder.model(config.model());
 
         if (config.temperature() != null) {
             builder.temperature(config.temperature());

@@ -43,8 +43,6 @@ spring:
   ai:
     ollama:
       base-url: http://192.168.200.199:11434
-      chat:
-        model: qwen2.5:1.5b
     # JDBC Chat Memory: CustomChatMemoryRepository 사용 (CHAT_MESSAGE 테이블)
     # JdbcChatMemoryRepository는 사용하지 않으므로 스키마 자동 초기화 비활성화
     chat:
@@ -113,3 +111,6 @@ logging:
 langfuse:
   public-key: ${LANGFUSE_PUBLIC_KEY}
   secret-key: ${LANGFUSE_SECRET_KEY}
+  retry:
+    max-attempts: 3   # 5xx(524 등) 시 최대 재시도 횟수, 모두 실패 시 예외 전파
+    delay-ms: 2000    # 재시도 전 대기 시간(밀리초)
