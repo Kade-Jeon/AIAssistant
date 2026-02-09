@@ -1,6 +1,9 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
+import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.common.exceptions.customs.ForbiddenException;
+import com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException;
+import com.kade.AIAssistant.common.prompt.PromptService;
 import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
 import com.kade.AIAssistant.feature.conversation.dto.response.AttachmentDto;
 import com.kade.AIAssistant.feature.conversation.dto.response.ConversationMessageDto;
@@ -12,8 +15,9 @@ import com.kade.AIAssistant.feature.conversation.entity.UserConversationEntity;
 import com.kade.AIAssistant.feature.conversation.repository.ChatAttachmentRepository;
 import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepository;
 import com.kade.AIAssistant.feature.conversation.repository.UserConversationRepository;
+import com.kade.AIAssistant.feature.conversation.service.idempotency.IdempotencyResolutionResult;
+import com.kade.AIAssistant.feature.conversation.service.idempotency.StreamingIdempotencyCoordinator;
 import com.kade.AIAssistant.infra.redis.context.RedisChatMemory;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +42,19 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 /**
- * AI 채팅 서비스 (핵심 비즈니스 로직) - SOLID 원칙 준수: 각 책임을 전문 컴포넌트에 위임
+ * AI 채팅 스트리밍 오케스트레이션 서비스.
+ *
+ * <p>역할: 스트리밍 플로우 조정 (Facade Pattern)
+ * <ul>
+ *   <li>Idempotency 체크 → 대화 초기화 → 메시지 저장 → AI 실행 → 결과 저장</li>
+ * </ul>
+ *
+ * <p>의존성이 많은 이유:
+ * <ul>
+ *   <li>스트리밍 하나를 완성하려면 여러 단계의 협력이 필요하기 때문</li>
+ *   <li>복잡한 로직은 이미 전문 컴포넌트(Idempotency, Initializer)로 분리됨</li>
+ *   <li>남은 의존성은 데이터 접근 + 실행 위임</li>
+ * </ul>
  */
 @Slf4j
 @Service
@@ -47,7 +63,7 @@ import reactor.core.publisher.Flux;
 public class ConversationService {
 
     @Value("${spring.ai.ollama.chat.model:default}")
-    private String MODEL_NAME;
+    private String defaultModelName;
 
     @Value("${app.conversation.default-limit:20}")
     private int defaultLimit;
@@ -61,17 +77,18 @@ public class ConversationService {
     private final ChatAttachmentRepository chatAttachmentRepository;
     private final UserConversationRepository userConversationRepository;
     private final RedisChatMemory redisChatMemory;
-    private final UserConversationEnsureService userConversationEnsureService;
-    private final IdempotencyService idempotencyService;
+    /** 대화 초기화(ensure + 제목 결정 + SSE 이벤트)는 ConversationInitializer에 위임 */
+    private final ConversationInitializer conversationInitializer;
+    private final StreamingIdempotencyCoordinator idempotencyCoordinator;
+    private final PromptService promptService;
 
     /**
-     * [SSE 스트리밍] AI 채팅 응답 생성. conversationId가 비어 있으면 UUID로 새로 생성해 DB에 등록하고, 그 id로 대화를 이어간다.
-     *
-     * @return 사용 중인 conversationId (신규 생성 포함)
+     * 실제 스트리밍에 사용되는 모델명을 Langfuse config와 동일 소스에서 조회한다.
+     * ModelExecuteService와 일치시키기 위해 PromptService를 통해 조회하며, 없으면 application 기본값 사용.
      */
-    @Transactional
-    public String streamToSse(String userId, AssistantRequest request, SseEmitter emitter) {
-        return streamToSse(userId, request, emitter, (String) null);
+    private String resolveModelName(PromptType promptType) {
+        String model = promptService.getLangfusePrompt(promptType).config().model();
+        return StringUtils.hasText(model) ? model : defaultModelName;
     }
 
     /**
@@ -80,112 +97,51 @@ public class ConversationService {
      */
     @Transactional
     public String streamToSse(String userId, AssistantRequest request, SseEmitter emitter, String idempotencyKey) {
-        String conversationId;
-        boolean skipSaveUserMessage = false;
+        // 1. Idempotency 처리 - StreamingIdempotencyCoordinator에 위임
+        IdempotencyResolutionResult resolution = idempotencyCoordinator.resolve(
+                userId, idempotencyKey, request, emitter);
 
-        if (StringUtils.hasText(idempotencyKey)) {
-            var opt = idempotencyService.get(userId, idempotencyKey);
-            if (opt.isPresent()) {
-                IdempotencyState state = opt.get();
-                if (IdempotencyState.COMPLETED.equals(state.getStatus())) {
-                    try {
-                        emitter.send(SseEmitter.event()
-                                .name("already_completed")
-                                .data(Map.of("conversationId", state.getConversationId())));
-                    } catch (IOException e) {
-                        log.warn("already_completed 이벤트 전송 실패", e);
-                    }
-                    emitter.complete();
-                    return state.getConversationId();
-                }
-                if (IdempotencyState.IN_PROGRESS.equals(state.getStatus())) {
-                    throw new com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException(
-                            "동일한 Idempotency-Key로 요청이 이미 처리 중입니다.",
-                            com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException.CODE_REQUEST_IN_PROGRESS
-                    );
-                }
-                if (IdempotencyState.FAILED.equals(state.getStatus())) {
-                    IdempotencyState retryState = idempotencyService.tryStartRetry(userId, idempotencyKey);
-                    if (retryState != null) {
-                        conversationId = retryState.getConversationId();
-                        skipSaveUserMessage = true;
-                    } else {
-                        conversationId = resolveConversationId(request);
-                        skipSaveUserMessage = false;
-                    }
-                } else {
-                    conversationId = resolveConversationId(request);
-                }
-            } else {
-                conversationId = resolveConversationId(request);
-            }
-        } else {
-            conversationId = resolveConversationId(request);
+        // 이미 완료된 요청인 경우 조기 반환
+        if (resolution.isAlreadyCompleted()) {
+            return resolution.getConversationId();
         }
 
+        String conversationId = resolution.getConversationId();
+        boolean skipSaveUserMessage = resolution.isSkipSaveUserMessage();
+
+        // 2. Conversation 초기화 및 사용자 메시지 저장
         if (!skipSaveUserMessage) {
-            boolean isNewConversation = !StringUtils.hasText(request.conversationId());
-            if (isNewConversation) {
-                String subject = resolveSubjectForNew(request);
-                userConversationEnsureService.ensure(userId, conversationId, subject);
-                try {
-                    emitter.send(SseEmitter.event()
-                            .name("conversation_created")
-                            .data(new UserConversationItemDto(conversationId, subject)));
-                } catch (IOException e) {
-                    log.warn("conversation_created 이벤트 전송 실패", e);
-                }
-            } else {
-                userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)");
-            }
-            saveUserMessage(conversationId, request.question());
-            if (StringUtils.hasText(idempotencyKey)) {
-                UUID userMessageId = chatMessageRepository
-                        .findFirstByConversationIdAndTypeOrderByTimestampDesc(conversationId,
-                                com.kade.AIAssistant.common.enums.MessageType.USER)
-                        .map(ChatMessageEntity::getId)
-                        .orElse(null);
-                boolean claimed = idempotencyService.claim(userId, idempotencyKey, conversationId, userMessageId);
-                if (!claimed) {
-                    throw new com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException(
-                            "동일한 Idempotency-Key로 요청이 이미 처리 중입니다.",
-                            com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException.CODE_REQUEST_IN_PROGRESS
-                    );
-                }
-            }
+            initializeConversationAndSaveUserMessage(userId, conversationId, request, emitter, idempotencyKey);
         } else {
-            userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)");
+            // 재시도인 경우: 매핑만 확보 (SSE 이벤트 없음)
+            conversationInitializer.ensureOnly(userId, conversationId, "(제목 없음)");
         }
 
-        boolean isNewConversation = !StringUtils.hasText(request.conversationId());
-        AssistantRequest requestToUse = isNewConversation
-                ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject())
-                : new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                        request.subject());
+        // 3. 요청 객체 준비
+        AssistantRequest requestToUse = new AssistantRequest(
+                request.promptType(),
+                request.question(),
+                request.language(),
+                conversationId,
+                request.subject(),
+                request.projectId()
+        );
 
-        log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}, idempotencyKey: {}", conversationId, request.question(),
-                idempotencyKey);
+        log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}, idempotencyKey: {}",
+                conversationId, request.question(), idempotencyKey);
 
+        // 4. 스트리밍 실행
         Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
-        if (StringUtils.hasText(idempotencyKey)) {
-            final String key = idempotencyKey;
-            stream = stream.doOnError(e -> {
-                idempotencyService.markFailed(userId, key);
-                idempotencyService.releaseRetryLock(userId, key);
-            });
-        }
+        stream = idempotencyCoordinator.attachErrorHandler(stream, userId, idempotencyKey);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
-        sessionInfo.setModel(MODEL_NAME);
+        sessionInfo.setModel(resolveModelName(requestToUse.promptType()));
 
+        // 5. 완료 콜백 설정
         final String finalConversationId = conversationId;
         Runnable saveAssistantCallback = () -> {
             saveAssistantMessage(finalConversationId, sessionInfo);
-            if (StringUtils.hasText(idempotencyKey)) {
-                idempotencyService.markCompleted(userId, idempotencyKey);
-                idempotencyService.releaseRetryLock(userId, idempotencyKey);
-            }
+            idempotencyCoordinator.markCompleted(userId, idempotencyKey);
         };
 
         streamingService.streamToSse(stream, emitter, sessionInfo, saveAssistantCallback);
@@ -193,10 +149,40 @@ public class ConversationService {
         return conversationId;
     }
 
-    private String resolveConversationId(AssistantRequest request) {
-        return StringUtils.hasText(request.conversationId())
-                ? request.conversationId()
-                : UUID.randomUUID().toString();
+    /**
+     * Conversation 초기화(ensure + SSE) 및 사용자 메시지 저장, Idempotency claim.
+     * 초기화는 {@link ConversationInitializer}에 위임한다.
+     */
+    private void initializeConversationAndSaveUserMessage(
+            String userId,
+            String conversationId,
+            AssistantRequest request,
+            SseEmitter emitter,
+            String idempotencyKey
+    ) {
+        conversationInitializer.initialize(userId, conversationId, request, emitter);
+
+        // 사용자 메시지 저장
+        saveUserMessage(conversationId, request.question());
+
+        // Idempotency claim
+        if (StringUtils.hasText(idempotencyKey)) {
+            UUID userMessageId = chatMessageRepository
+                    .findFirstByConversationIdAndTypeOrderByTimestampDesc(
+                            conversationId,
+                            com.kade.AIAssistant.common.enums.MessageType.USER
+                    )
+                    .map(ChatMessageEntity::getId)
+                    .orElse(null);
+
+            boolean claimed = idempotencyCoordinator.claim(userId, idempotencyKey, conversationId, userMessageId);
+            if (!claimed) {
+                throw new IdempotencyConflictException(
+                        "동일한 Idempotency-Key로 요청이 이미 처리 중입니다.",
+                        IdempotencyConflictException.CODE_REQUEST_IN_PROGRESS
+                );
+            }
+        }
     }
 
     /**
@@ -216,23 +202,11 @@ public class ConversationService {
                 ? UUID.randomUUID().toString()
                 : request.conversationId();
 
-        if (isNewConversation) {
-            String subject = resolveSubjectForNew(request);
-            userConversationEnsureService.ensure(userId, conversationId, subject);
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("conversation_created")
-                        .data(new UserConversationItemDto(conversationId, subject)));
-            } catch (IOException e) {
-                log.warn("conversation_created 이벤트 전송 실패", e);
-            }
-        } else {
-            userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)");
-        }
+        conversationInitializer.initialize(userId, conversationId, request, emitter);
 
         AssistantRequest requestToUse = isNewConversation
                 ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject())
+                request.subject(), request.projectId())
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
@@ -243,7 +217,7 @@ public class ConversationService {
         Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
-        sessionInfo.setModel(MODEL_NAME);
+        sessionInfo.setModel(resolveModelName(requestToUse.promptType()));
 
         // 스트리밍 완료 후 ASSISTANT 메시지 저장 콜백 추가
         Runnable combinedCallback = () -> {
@@ -277,23 +251,11 @@ public class ConversationService {
                 ? UUID.randomUUID().toString()
                 : request.conversationId();
 
-        if (isNewConversation) {
-            String subject = resolveSubjectForNew(request);
-            userConversationEnsureService.ensure(userId, conversationId, subject);
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("conversation_created")
-                        .data(new UserConversationItemDto(conversationId, subject)));
-            } catch (IOException e) {
-                log.warn("conversation_created 이벤트 전송 실패", e);
-            }
-        } else {
-            userConversationEnsureService.ensure(userId, conversationId, "(제목 없음)");
-        }
+        conversationInitializer.initialize(userId, conversationId, request, emitter);
 
         AssistantRequest requestToUse = isNewConversation
                 ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject())
+                request.subject(), request.projectId())
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
@@ -304,7 +266,7 @@ public class ConversationService {
         Flux<ChatResponse> stream = modelExecuteService.stream(userId, requestToUse);
 
         StreamingSessionInfo sessionInfo = new StreamingSessionInfo();
-        sessionInfo.setModel(MODEL_NAME);
+        sessionInfo.setModel(resolveModelName(requestToUse.promptType()));
 
         // 스트리밍 완료 후 ASSISTANT 메시지 저장 + 콜백 실행
         Runnable combinedCallback = () -> {
@@ -319,21 +281,6 @@ public class ConversationService {
         streamingService.streamToSse(stream, emitter, sessionInfo, combinedCallback);
 
         return conversationId;
-    }
-
-    /**
-     * 새 대화용 제목 결정. 넘어온 제목이 있으면 사용하고, 없으면 AI 요약 후 저장에 쓴다. 새 대화에서만 호출한다.
-     */
-    private String resolveSubjectForNew(AssistantRequest request) {
-        if (StringUtils.hasText(request.subject())) {
-            String s = request.subject();
-            return s.length() > 32 ? s.substring(0, 32) : s;
-        }
-        if (StringUtils.hasText(request.question())) {
-            String generated = modelExecuteService.generateConversationSubject(request.question());
-            return StringUtils.hasText(generated) ? generated : "(제목 없음)";
-        }
-        return "(제목 없음)";
     }
 
     /**

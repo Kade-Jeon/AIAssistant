@@ -49,9 +49,8 @@ dependencies {
     // 실제 구현은 CustomChatMemoryRepository 사용 (CHAT_MESSAGE 테이블)
     implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-repository-jdbc'
 
-    // Vector DB
-    //implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
-    //implementation 'org.springframework.ai:spring-ai-starter-vector-store-milvus'
+    // Vector DB (pgvector)
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 
     // Document Reader
     implementation 'org.springframework.ai:spring-ai-tika-document-reader'

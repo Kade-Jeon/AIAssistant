@@ -11,6 +11,7 @@ public record AssistantRequest(
         String question,
         String language,
         String conversationId,
-        String subject
+        String subject,
+        String projectId  // 프로젝트 대화 시 RAG 활성화용 (선택적)
 ) {
 }

@@ -1,6 +1,9 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
+import com.kade.AIAssistant.agent.provider.AgentToolProvider;
+import com.kade.AIAssistant.agent.service.RagService;
 import com.kade.AIAssistant.common.enums.PromptType;
+import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.common.prompt.PromptService;
 import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
 import com.kade.AIAssistant.infra.langfuse.prompt.LangfusePromptTemplate;
@@ -14,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClient.ChatClientRequestSpec;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -48,12 +52,25 @@ public class ModelExecuteService {
     private final PromptService promptService;
     private final OllamaChatModelFactory chatModelFactory;
     private final ChatMemory chatMemory;
+    private final RagService ragService;
+    private final AgentToolProvider agentToolProvider;
 
     /**
      * AI 모델 스트리밍 생성 - ChatClient 고수준 API 사용
      */
     public Flux<ChatResponse> stream(String userId, AssistantRequest request) {
         Span.current().setAttribute("langfuse.trace.metadata.promptType", request.promptType().name());
+
+        if (!StringUtils.hasText(request.conversationId())) {
+            return Flux.error(new InvalidRequestException("conversationId는 필수입니다."));
+        }
+
+        // projectId 있으면 RAG 컨텍스트 설정
+        boolean ragEnabled = StringUtils.hasText(request.projectId());
+        if (ragEnabled) {
+            ragService.setContext(userId, request.projectId());
+            log.info("RAG 활성화: projectId={}", request.projectId());
+        }
 
         LangfusePromptTemplate template = promptService.getLangfusePrompt(request.promptType());
         Prompt prompt = buildPrompt(userId, request, template);
@@ -70,16 +87,27 @@ public class ModelExecuteService {
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
 
-        String conversationId = StringUtils.hasText(request.conversationId())
-                ? request.conversationId()
-                : ChatMemory.DEFAULT_CONVERSATION_ID;
+        String conversationId = request.conversationId();
 
-        return chatClient
+        ChatClientRequestSpec promptSpec = chatClient
                 .prompt(prompt)
                 .options(options)
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
+        
+        // RAG 활성화 시 문서 검색 도구 추가
+        if (ragEnabled) {
+            promptSpec = promptSpec.tools(agentToolProvider.getTools());
+        }
+
+        return promptSpec
                 .stream()
                 .chatResponse()
+                .doFinally(signalType -> {
+                    // 스트리밍 완료 후 RAG 컨텍스트 정리
+                    if (ragEnabled) {
+                        ragService.clearContext();
+                    }
+                })
                 .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryInitialBackoffMs))
                         .maxBackoff(Duration.ofMillis(retryMaxBackoffMs))
                         .doBeforeRetry(signal ->
@@ -114,7 +142,7 @@ public class ModelExecuteService {
             // Langfuse 또는 Redis 에서 프롬프트 템플릿 가져옴
             LangfusePromptTemplate template = promptService.getLangfusePrompt(PromptType.SUBJECT);
 
-            AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null, null);
+            AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null, null, null);
             // 시스템 프롬프트 생성
             Message systemPrompt = promptService.getSystemPrompt(template, subRequest);
             // 옵션

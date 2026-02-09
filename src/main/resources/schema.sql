@@ -1,3 +1,20 @@
+-- pgvector 확장 (RAG 벡터 검색용)
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS hstore;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 벡터 저장소 테이블 (Spring AI PgVectorStore)
+-- metadata JSON에 project_id, user_id, filename 저장하여 프로젝트별 필터링
+CREATE TABLE IF NOT EXISTS vector_store (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    content TEXT,
+    metadata json,
+    embedding vector(768)
+);
+
+CREATE INDEX IF NOT EXISTS vector_store_embedding_idx
+ON vector_store USING HNSW (embedding vector_cosine_ops);
+
 -- 채팅 메시지 테이블 (안정적인 id로 모든 대화 히스토리 저장)
 -- id는 안정적으로 유지되므로 CHAT_ATTACHMENT와 FK 제약 가능
 CREATE TABLE IF NOT EXISTS CHAT_MESSAGE (
@@ -28,6 +45,18 @@ CREATE TABLE IF NOT EXISTS USER_CONVERSATION (
 );
 
 CREATE INDEX IF NOT EXISTS USER_CONVERSATION_USER_ID_IDX ON USER_CONVERSATION(user_id);
+
+-- 유저별 프로젝트 소유 매핑 (user_conversation과 동일 구조)
+CREATE TABLE IF NOT EXISTS USER_PROJECT (
+    user_id VARCHAR(64) NOT NULL,
+    project_id VARCHAR(36) NOT NULL,
+    subject VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, project_id)
+);
+
+CREATE INDEX IF NOT EXISTS USER_PROJECT_USER_ID_IDX ON USER_PROJECT(user_id);
 
 -- 채팅 메시지 첨부파일 메타데이터 (message_id로 CHAT_MESSAGE 참조)
 -- FK 제약 추가: CHAT_MESSAGE의 id는 안정적이므로 FK 제약 가능

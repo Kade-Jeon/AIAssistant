@@ -6,7 +6,7 @@ import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
 import com.kade.AIAssistant.feature.conversation.dto.request.ChangeSubjectRequest;
 import com.kade.AIAssistant.feature.conversation.service.ConversationService;
-import com.kade.AIAssistant.feature.conversation.service.RagService;
+import com.kade.AIAssistant.feature.conversation.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class ConversationController {
 
     private final ConversationService conversationService;
-    private final RagService ragService;
+    private final DocumentService ragService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.sse.timeout:300000}")
@@ -116,7 +116,8 @@ public class ConversationController {
                     combinedQuestion,
                     request.language(),
                     request.conversationId(),
-                    request.subject()
+                    request.subject(),
+                    request.projectId()  // 파일 첨부도 projectId 전달
             );
 
             emitter.send(SseEmitter.event().name("open").data("connected"));

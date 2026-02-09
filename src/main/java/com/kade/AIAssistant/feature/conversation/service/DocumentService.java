@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Slf4j
 @NoArgsConstructor
-public class RagService {
+public class DocumentService {
 
     public String extractText(MultipartFile file) {
         String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
