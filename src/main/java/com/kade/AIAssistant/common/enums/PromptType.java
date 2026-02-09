@@ -1,23 +1,17 @@
 package com.kade.AIAssistant.common.enums;
 
-import com.kade.AIAssistant.common.constants.PromptVariables;
 import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
-import java.util.HashMap;
 import java.util.Map;
 
 public enum PromptType {
-    TRANSLATE {
+    CONVERSATION {
         @Override
         public Map<String, Object> formatVariable(AssistantRequest contents) {
-            Map<String, Object> map = new HashMap<>();
-            if (contents.language() != null) {
-                map.put(PromptVariables.LANGUAGE, Language.toKoreanName(contents.language()));
-            }
-            return map;
+            return Map.of();
         }
     },
 
-    CONVERSATION {
+    PROJECT {
         @Override
         public Map<String, Object> formatVariable(AssistantRequest contents) {
             return Map.of();

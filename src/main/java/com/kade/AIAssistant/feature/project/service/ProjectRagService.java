@@ -16,7 +16,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 프로젝트별 RAG 문서 추가 및 검색 서비스. 문서 업로드 시 청킹 후 벡터 저장, 검색 시 유사도 기반 검색 결과 반환.
+ * RAG 기술 구현 (역할 구분: docs/RAG_SERVICE_ROLES.md 참고).
+ * 항상 userId, projectId를 인자로 받아 벡터 저장/검색만 수행. "지금 대화" 같은 컨텍스트는 모름.
+ * - addDocument: 텍스트 추출 → 청킹 → 임베딩 → VectorStore 저장
+ * - search / searchAsContext: conversation_id, user_id 메타데이터로 유사도 검색
  */
 @Service
 @Slf4j
@@ -52,7 +55,7 @@ public class ProjectRagService {
         }
 
         Map<String, Object> metadata = Map.of(
-                "project_id", projectId,
+                "conversation_id", projectId,
                 "user_id", userId,
                 "filename", filename
         );
@@ -60,7 +63,7 @@ public class ProjectRagService {
         List<Document> chunks = textSplitter.apply(List.of(doc));
 
         for (Document chunk : chunks) {
-            chunk.getMetadata().put("project_id", projectId);
+            chunk.getMetadata().put("conversation_id", projectId);
             chunk.getMetadata().put("user_id", userId);
             chunk.getMetadata().put("filename", filename);
         }
@@ -75,7 +78,7 @@ public class ProjectRagService {
     public List<Document> search(String userId, String projectId, String query) {
         validateProjectOwnership(userId, projectId);
 
-        String filterExpr = String.format("project_id == '%s' && user_id == '%s'",
+        String filterExpr = String.format("conversation_id == '%s' && user_id == '%s'",
                 escapeFilterValue(projectId),
                 escapeFilterValue(userId));
 
@@ -103,7 +106,7 @@ public class ProjectRagService {
     }
 
     private void validateProjectOwnership(String userId, String projectId) {
-        if (!userProjectRepository.existsById_UserIdAndId_ProjectId(userId, projectId)) {
+        if (!userProjectRepository.existsById_UserIdAndId_ConversationId(userId, projectId)) {
             throw new ForbiddenException("해당 프로젝트에 대한 접근 권한이 없습니다.");
         }
     }
@@ -113,5 +116,31 @@ public class ProjectRagService {
             return "";
         }
         return value.replace("'", "''");
+    }
+
+    /**
+     * 프로젝트 삭제 시 벡터 저장소에서 해당 conversation_id, user_id 메타데이터를 가진 문서 삭제.
+     */
+    public void deleteByProject(String userId, String projectId) {
+        validateProjectOwnership(userId, projectId);
+        String filterExpr = String.format("conversation_id == '%s' && user_id == '%s'",
+                escapeFilterValue(projectId),
+                escapeFilterValue(userId));
+        vectorStore.delete(filterExpr);
+        log.info("프로젝트 벡터 삭제 완료: projectId={}, userId={}", projectId, userId);
+    }
+
+    /**
+     * 단일 문서의 벡터 청크를 삭제한다. conversation_id, user_id, filename 메타데이터로 필터링.
+     */
+    public void deleteByDocument(String userId, String conversationId, String filename) {
+        validateProjectOwnership(userId, conversationId);
+        String filterExpr = String.format(
+                "conversation_id == '%s' && user_id == '%s' && filename == '%s'",
+                escapeFilterValue(conversationId),
+                escapeFilterValue(userId),
+                escapeFilterValue(filename));
+        vectorStore.delete(filterExpr);
+        log.info("문서 벡터 삭제 완료: conversationId={}, filename={}", conversationId, filename);
     }
 }

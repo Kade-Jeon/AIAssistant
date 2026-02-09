@@ -114,10 +114,8 @@ public class ConversationController {
             AssistantRequest fileRequest = new AssistantRequest(
                     request.promptType(),
                     combinedQuestion,
-                    request.language(),
                     request.conversationId(),
-                    request.subject(),
-                    request.projectId()  // 파일 첨부도 projectId 전달
+                    request.subject()
             );
 
             emitter.send(SseEmitter.event().name("open").data("connected"));

@@ -2,6 +2,7 @@ package com.kade.AIAssistant.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +17,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Slf4j
 public class VectorStoreConfig {
 
-    private static final int EMBEDDING_DIMENSIONS = 768; // nomic-embed-text
+    private static final int EMBEDDING_DIMENSIONS = 1024; // qwen3-embedding
+    private static final int CHUNK_SIZE = 500;
+    private static final int MIN_CHUNK_SIZE_CHARS = 200;
+
+    @Bean
+    public TokenTextSplitter tokenTextSplitter() {
+        return TokenTextSplitter.builder()
+                .withChunkSize(CHUNK_SIZE)
+                .withMinChunkSizeChars(MIN_CHUNK_SIZE_CHARS)
+                .build();
+    }
 
     @Bean
     public VectorStore vectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {

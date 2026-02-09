@@ -1,8 +1,10 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kade.AIAssistant.common.exceptions.customs.IdempotencyConflictException;
 import com.kade.AIAssistant.infra.redis.enums.RedisKeyPrefix;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 /**
  * Idempotency-Key 기반 중복 요청 방지.
  * Redis에 상태(IN_PROGRESS / COMPLETED / FAILED)를 저장하고, 재시도 시 사용자 메시지 중복 저장을 방지한다.
+ * Redis 값은 GenericJackson2JsonRedisSerializer로 저장되며, 역직렬화 시 LinkedHashMap으로 올 수 있어
+ * 타입 안전 변환을 수행한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Service;
 public class IdempotencyService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.idempotency.ttl-hours:24}")
     private int ttlHours;
@@ -36,15 +41,34 @@ public class IdempotencyService {
     }
 
     /**
+     * Redis에서 읽은 값을 IdempotencyState로 안전 변환.
+     * GenericJackson2JsonRedisSerializer가 타입 정보 없이 LinkedHashMap으로 역직렬화하는 경우를 처리한다.
+     */
+    private IdempotencyState toIdempotencyState(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof IdempotencyState state) {
+            return state;
+        }
+        if (value instanceof Map<?, ?> map) {
+            try {
+                return objectMapper.convertValue(map, IdempotencyState.class);
+            } catch (Exception e) {
+                log.warn("Redis idempotency 상태를 IdempotencyState로 변환 실패: {}", e.getMessage());
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Idempotency-Key에 해당하는 상태 조회
      */
     public Optional<IdempotencyState> get(String userId, String idempotencyKey) {
         String key = stateKey(userId, idempotencyKey);
         Object value = redisTemplate.opsForValue().get(key);
-        if (value != null && value instanceof IdempotencyState state) {
-            return Optional.of(state);
-        }
-        return Optional.empty();
+        return Optional.ofNullable(toIdempotencyState(value));
     }
 
     /**
@@ -71,7 +95,7 @@ public class IdempotencyService {
      */
     public void markCompleted(String userId, String idempotencyKey) {
         String key = stateKey(userId, idempotencyKey);
-        IdempotencyState existing = (IdempotencyState) redisTemplate.opsForValue().get(key);
+        IdempotencyState existing = toIdempotencyState(redisTemplate.opsForValue().get(key));
         if (existing != null) {
             existing.setStatus(IdempotencyState.COMPLETED);
             redisTemplate.opsForValue().set(key, existing, Duration.ofHours(ttlHours));
@@ -84,7 +108,7 @@ public class IdempotencyService {
      */
     public void markFailed(String userId, String idempotencyKey) {
         String key = stateKey(userId, idempotencyKey);
-        IdempotencyState existing = (IdempotencyState) redisTemplate.opsForValue().get(key);
+        IdempotencyState existing = toIdempotencyState(redisTemplate.opsForValue().get(key));
         if (existing != null) {
             existing.setStatus(IdempotencyState.FAILED);
             redisTemplate.opsForValue().set(key, existing, Duration.ofHours(ttlHours));

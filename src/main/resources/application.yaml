@@ -8,9 +8,11 @@ spring:
 
   # JDBC Chat Memory 자동 설정 제외 (CustomChatMemoryRepository 사용)
   # CustomChatMemoryRepository가 CHAT_MESSAGE 테이블을 사용하므로 JdbcChatMemoryRepository는 필요 없음
+  # PgVectorStore 자동 설정 제외 (VectorStoreConfig에서 커스텀 설정 사용)
   autoconfigure:
     exclude:
       - org.springframework.ai.model.chat.memory.repository.jdbc.autoconfigure.JdbcChatMemoryRepositoryAutoConfiguration
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
 
   # Virtual Thread 설정
   threads:
@@ -62,7 +64,7 @@ spring:
 # 기본 애플리케이션 설정
 app:
   sse:
-    timeout: 300000  # 기본값: 5분 (밀리초)
+    timeout: 1200000  # 기본값: 20분 (밀리초)
   subject-generation:
     timeout-seconds: 30  # 제목 생성 AI 호출 타임아웃(초), 초과 시 질문 앞 36자 사용
   conversation:
@@ -107,7 +109,7 @@ management:
 # 로깅
 logging:
   level:
-    com.crinity.ai: INFO
+    com.kade.AIAssistant: INFO
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

@@ -21,19 +21,23 @@ public class UserProjectId implements Serializable {
     @Column(name = "user_id", nullable = false, length = 64)
     private String userId;
 
-    @Column(name = "project_id", nullable = false, length = 36)
-    private String projectId;
+    @Column(name = "conversation_id", nullable = false, length = 36)
+    private String conversationId;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         UserProjectId that = (UserProjectId) o;
-        return Objects.equals(userId, that.userId) && Objects.equals(projectId, that.projectId);
+        return Objects.equals(userId, that.userId) && Objects.equals(conversationId, that.conversationId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, projectId);
+        return Objects.hash(userId, conversationId);
     }
 }

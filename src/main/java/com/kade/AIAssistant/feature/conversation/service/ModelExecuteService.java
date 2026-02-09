@@ -1,7 +1,6 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
 import com.kade.AIAssistant.agent.provider.AgentToolProvider;
-import com.kade.AIAssistant.agent.service.RagService;
 import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.common.exceptions.customs.InvalidRequestException;
 import com.kade.AIAssistant.common.prompt.PromptService;
@@ -52,7 +51,6 @@ public class ModelExecuteService {
     private final PromptService promptService;
     private final OllamaChatModelFactory chatModelFactory;
     private final ChatMemory chatMemory;
-    private final RagService ragService;
     private final AgentToolProvider agentToolProvider;
 
     /**
@@ -65,16 +63,14 @@ public class ModelExecuteService {
             return Flux.error(new InvalidRequestException("conversationId는 필수입니다."));
         }
 
-        // projectId 있으면 RAG 컨텍스트 설정
-        boolean ragEnabled = StringUtils.hasText(request.projectId());
-        if (ragEnabled) {
-            ragService.setContext(userId, request.projectId());
-            log.info("RAG 활성화: projectId={}", request.projectId());
-        }
+        boolean ragEnabled = request.promptType().equals(PromptType.PROJECT);
 
         LangfusePromptTemplate template = promptService.getLangfusePrompt(request.promptType());
         Prompt prompt = buildPrompt(userId, request, template);
         OllamaChatOptions options = template.getOllamaChatOptions();
+
+        log.info("PROJECT 타입 모델 정보: model={}, ragEnabled={}, options={}", 
+                template.config().model(), ragEnabled, options);
 
         // 기존 팩토리로 ChatModel 생성 (기본 옵션 포함)
         OllamaChatModel chatModel = chatModelFactory.getChatModel(template.config().model(), request.promptType(),
@@ -93,21 +89,15 @@ public class ModelExecuteService {
                 .prompt(prompt)
                 .options(options)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
-        
-        // RAG 활성화 시 문서 검색 도구 추가
+
+        // RAG 활성화 시 컨텍스트(userId, projectId)를 가진 문서 검색 도구 추가 (ThreadLocal 미사용)
         if (ragEnabled) {
-            promptSpec = promptSpec.tools(agentToolProvider.getTools());
+            promptSpec = promptSpec.tools(agentToolProvider.getTools(userId, request.conversationId()));
         }
 
         return promptSpec
                 .stream()
                 .chatResponse()
-                .doFinally(signalType -> {
-                    // 스트리밍 완료 후 RAG 컨텍스트 정리
-                    if (ragEnabled) {
-                        ragService.clearContext();
-                    }
-                })
                 .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryInitialBackoffMs))
                         .maxBackoff(Duration.ofMillis(retryMaxBackoffMs))
                         .doBeforeRetry(signal ->
@@ -142,7 +132,7 @@ public class ModelExecuteService {
             // Langfuse 또는 Redis 에서 프롬프트 템플릿 가져옴
             LangfusePromptTemplate template = promptService.getLangfusePrompt(PromptType.SUBJECT);
 
-            AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null, null, null);
+            AssistantRequest subRequest = new AssistantRequest(PromptType.SUBJECT, question, null, null);
             // 시스템 프롬프트 생성
             Message systemPrompt = promptService.getSystemPrompt(template, subRequest);
             // 옵션

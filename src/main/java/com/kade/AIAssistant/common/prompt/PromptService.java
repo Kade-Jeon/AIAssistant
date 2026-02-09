@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
-import org.springframework.ai.template.st.StTemplateRenderer;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -44,11 +43,11 @@ public class PromptService {
     public Message getSystemPrompt(LangfusePromptTemplate langfusePromptTemplate, AssistantRequest request) {
         SystemPromptTemplate systemPromptTemplate =
                 switch (request.promptType()) {
-                    case TRANSLATE -> new SystemPromptTemplate.Builder()
-                            .renderer(StTemplateRenderer.builder().startDelimiterToken('<').endDelimiterToken('>')
-                                    .build())
-                            .template(langfusePromptTemplate.prompt())
-                            .build();
+//                    case TRANSLATE -> new SystemPromptTemplate.Builder()
+//                            .renderer(StTemplateRenderer.builder().startDelimiterToken('<').endDelimiterToken('>')
+//                                    .build())
+//                            .template(langfusePromptTemplate.prompt())
+//                            .build();
                     default ->
                         // 기본: {} 구분자 사용
                             new SystemPromptTemplate.Builder()

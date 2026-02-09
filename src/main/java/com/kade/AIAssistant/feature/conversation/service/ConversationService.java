@@ -17,6 +17,9 @@ import com.kade.AIAssistant.feature.conversation.repository.ChatMessageRepositor
 import com.kade.AIAssistant.feature.conversation.repository.UserConversationRepository;
 import com.kade.AIAssistant.feature.conversation.service.idempotency.IdempotencyResolutionResult;
 import com.kade.AIAssistant.feature.conversation.service.idempotency.StreamingIdempotencyCoordinator;
+import com.kade.AIAssistant.feature.project.repository.ProjectDocumentRepository;
+import com.kade.AIAssistant.feature.project.repository.UserProjectRepository;
+import com.kade.AIAssistant.feature.project.service.ProjectRagService;
 import com.kade.AIAssistant.infra.redis.context.RedisChatMemory;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -77,14 +80,19 @@ public class ConversationService {
     private final ChatAttachmentRepository chatAttachmentRepository;
     private final UserConversationRepository userConversationRepository;
     private final RedisChatMemory redisChatMemory;
-    /** 대화 초기화(ensure + 제목 결정 + SSE 이벤트)는 ConversationInitializer에 위임 */
+    private final UserProjectRepository userProjectRepository;
+    private final ProjectRagService projectRagService;
+    private final ProjectDocumentRepository projectDocumentRepository;
+    /**
+     * 대화 초기화(ensure + 제목 결정 + SSE 이벤트)는 ConversationInitializer에 위임
+     */
     private final ConversationInitializer conversationInitializer;
     private final StreamingIdempotencyCoordinator idempotencyCoordinator;
     private final PromptService promptService;
 
     /**
-     * 실제 스트리밍에 사용되는 모델명을 Langfuse config와 동일 소스에서 조회한다.
-     * ModelExecuteService와 일치시키기 위해 PromptService를 통해 조회하며, 없으면 application 기본값 사용.
+     * 실제 스트리밍에 사용되는 모델명을 Langfuse config와 동일 소스에서 조회한다. ModelExecuteService와 일치시키기 위해 PromptService를 통해 조회하며, 없으면
+     * application 기본값 사용.
      */
     private String resolveModelName(PromptType promptType) {
         String model = promptService.getLangfusePrompt(promptType).config().model();
@@ -114,17 +122,15 @@ public class ConversationService {
             initializeConversationAndSaveUserMessage(userId, conversationId, request, emitter, idempotencyKey);
         } else {
             // 재시도인 경우: 매핑만 확보 (SSE 이벤트 없음)
-            conversationInitializer.ensureOnly(userId, conversationId, "(제목 없음)");
+            conversationInitializer.ensureOnly(userId, conversationId, "(제목 없음)", request.promptType());
         }
 
-        // 3. 요청 객체 준비
+        // 3. 요청 객체 준비 (RAG/도구는 promptType == PROJECT로 ModelExecuteService에서 처리)
         AssistantRequest requestToUse = new AssistantRequest(
                 request.promptType(),
                 request.question(),
-                request.language(),
                 conversationId,
-                request.subject(),
-                request.projectId()
+                request.subject()
         );
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}, idempotencyKey: {}",
@@ -150,8 +156,7 @@ public class ConversationService {
     }
 
     /**
-     * Conversation 초기화(ensure + SSE) 및 사용자 메시지 저장, Idempotency claim.
-     * 초기화는 {@link ConversationInitializer}에 위임한다.
+     * Conversation 초기화(ensure + SSE) 및 사용자 메시지 저장, Idempotency claim. 초기화는 {@link ConversationInitializer}에 위임한다.
      */
     private void initializeConversationAndSaveUserMessage(
             String userId,
@@ -197,16 +202,14 @@ public class ConversationService {
     @Transactional
     public String streamToSse(String userId, AssistantRequest request, SseEmitter emitter,
                               Runnable onCompleteCallback) {
+        String conversationId = resolveConversationId(request);
         boolean isNewConversation = !StringUtils.hasText(request.conversationId());
-        String conversationId = isNewConversation
-                ? UUID.randomUUID().toString()
-                : request.conversationId();
 
         conversationInitializer.initialize(userId, conversationId, request, emitter);
 
         AssistantRequest requestToUse = isNewConversation
-                ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject(), request.projectId())
+                ? new AssistantRequest(request.promptType(), request.question(), conversationId,
+                request.subject())
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
@@ -246,16 +249,14 @@ public class ConversationService {
     @Transactional
     public String streamToSseWithUserMessageId(String userId, AssistantRequest request, SseEmitter emitter,
                                                Consumer<UUID> onCompleteCallback) {
+        String conversationId = resolveConversationId(request);
         boolean isNewConversation = !StringUtils.hasText(request.conversationId());
-        String conversationId = isNewConversation
-                ? UUID.randomUUID().toString()
-                : request.conversationId();
 
         conversationInitializer.initialize(userId, conversationId, request, emitter);
 
         AssistantRequest requestToUse = isNewConversation
-                ? new AssistantRequest(request.promptType(), request.question(), request.language(), conversationId,
-                request.subject(), request.projectId())
+                ? new AssistantRequest(request.promptType(), request.question(), conversationId,
+                request.subject())
                 : request;
 
         log.info("SSE 스트리밍 시작 - conversationId: {}, 질문: {}", conversationId, request.question());
@@ -307,7 +308,10 @@ public class ConversationService {
      */
     public List<ConversationMessageDto> getConversation(
             String userId, String conversationId, Integer limit, Instant beforeTimestamp) {
-        if (!userConversationRepository.existsById_UserIdAndId_ConversationId(userId, conversationId)) {
+        boolean hasConversation = userConversationRepository.existsById_UserIdAndId_ConversationId(userId,
+                conversationId);
+        boolean hasProject = userProjectRepository.existsById_UserIdAndId_ConversationId(userId, conversationId);
+        if (!hasConversation && !hasProject) {
             throw new ForbiddenException("해당 대화에 대한 접근 권한이 없습니다.");
         }
         int effectiveLimit = (limit == null || limit <= 0) ? defaultLimit : Math.min(limit, maxLimit);
@@ -503,12 +507,23 @@ public class ConversationService {
 
     @Transactional(readOnly = false)
     public boolean deleteConversation(String userId, String conversationId) {
-        if (userConversationRepository.findById_UserIdAndId_ConversationId(userId, conversationId).isEmpty()) {
+        boolean hasConversation = userConversationRepository.findById_UserIdAndId_ConversationId(userId, conversationId)
+                .isPresent();
+        boolean hasProject = userProjectRepository.existsById_UserIdAndId_ConversationId(userId, conversationId);
+
+        if (!hasConversation && !hasProject) {
             return false;
         }
+
         chatAttachmentRepository.deleteByConversationId(conversationId);
-        chatMessageRepository.deleteByConversationId(conversationId);
+        redisChatMemory.clear(conversationId);
         userConversationRepository.deleteById_UserIdAndId_ConversationId(userId, conversationId);
+
+        if (hasProject) {
+            projectRagService.deleteByProject(userId, conversationId);
+            projectDocumentRepository.deleteByConversationIdAndUserId(conversationId, userId);
+            userProjectRepository.deleteById_UserIdAndId_ConversationId(userId, conversationId);
+        }
         return true;
     }
 
@@ -517,11 +532,34 @@ public class ConversationService {
      */
     @Transactional(readOnly = false)
     public void changeSubject(String userId, String conversationId, String subject) {
-        UserConversationEntity entity = userConversationRepository
+        UserConversationEntity convEntity = userConversationRepository
                 .findById_UserIdAndId_ConversationId(userId, conversationId)
-                .orElseThrow(() -> new ForbiddenException("해당 대화에 대한 접근 권한이 없습니다."));
+                .orElse(null);
+        var projectEntity = userProjectRepository.findById_UserIdAndId_ConversationId(userId, conversationId);
+
+        if (convEntity == null && projectEntity.isEmpty()) {
+            throw new ForbiddenException("해당 대화에 대한 접근 권한이 없습니다.");
+        }
+
         String s = subject != null ? subject : "(제목 없음)";
-        entity.changeSubject(s.length() > 32 ? s.substring(0, 32) : s);
-        userConversationRepository.save(entity);
+        String trimmedSubject = s.length() > 32 ? s.substring(0, 32) : s;
+
+        if (convEntity != null) {
+            convEntity.changeSubject(trimmedSubject);
+            userConversationRepository.save(convEntity);
+        }
+        projectEntity.ifPresent(e -> {
+            e.changeSubject(trimmedSubject);
+            userProjectRepository.save(e);
+        });
+    }
+
+    /**
+     * conversationId 없으면 새 UUID. (promptType == PROJECT 시 RAG/도구는 ModelExecuteService에서 처리)
+     */
+    private String resolveConversationId(AssistantRequest request) {
+        return StringUtils.hasText(request.conversationId())
+                ? request.conversationId()
+                : UUID.randomUUID().toString();
     }
 }

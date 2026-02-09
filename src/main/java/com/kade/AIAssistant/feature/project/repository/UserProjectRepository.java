@@ -12,11 +12,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface UserProjectRepository extends JpaRepository<UserProjectEntity, UserProjectId> {
 
-    boolean existsById_UserIdAndId_ProjectId(String userId, String projectId);
+    boolean existsById_UserIdAndId_ConversationId(String userId, String conversationId);
 
-    Optional<UserProjectEntity> findById_UserIdAndId_ProjectId(String userId, String projectId);
+    Optional<UserProjectEntity> findById_UserIdAndId_ConversationId(String userId, String conversationId);
 
     List<UserProjectEntity> findById_UserIdOrderByUpdatedAtDesc(String userId, Pageable pageable);
 
-    int deleteById_UserIdAndId_ProjectId(String userId, String projectId);
+    int deleteById_UserIdAndId_ConversationId(String userId, String conversationId);
 }

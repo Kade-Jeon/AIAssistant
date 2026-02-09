@@ -1,5 +1,6 @@
 package com.kade.AIAssistant.feature.conversation.service;
 
+import com.kade.AIAssistant.common.enums.PromptType;
 import com.kade.AIAssistant.feature.conversation.dto.request.AssistantRequest;
 import com.kade.AIAssistant.feature.conversation.dto.response.UserConversationItemDto;
 import java.io.IOException;
@@ -54,27 +55,34 @@ public class ConversationInitializer {
             AssistantRequest request,
             SseEmitter emitter
     ) {
+        if (request.promptType() == PromptType.PROJECT) {
+            return;
+        }
+
         boolean isNewConversation = !StringUtils.hasText(request.conversationId());
 
         if (isNewConversation) {
             String subject = resolveSubjectForNew(request);
-            ensureOnly(userId, conversationId, subject);
+            ensureOnly(userId, conversationId, subject, request.promptType());
             sendConversationCreated(emitter, conversationId, subject);
         } else {
-            ensureOnly(userId, conversationId, "(제목 없음)");
+            ensureOnly(userId, conversationId, "(제목 없음)", request.promptType());
         }
     }
 
     /**
      * 유저-대화 매핑만 등록/갱신한다. (SSE 이벤트 없음)
-     *
-     * <p>재시도 등으로 이미 대화가 있고, 제목 갱신 없이 매핑만 확보할 때 사용한다.
+     * promptType이 PROJECT이면 USER_CONVERSATION에 등록하지 않는다.
      *
      * @param userId         사용자 ID
      * @param conversationId 대화 ID
      * @param subject        대화 제목 (일반적으로 "(제목 없음)")
+     * @param promptType     프롬프트 타입 (PROJECT면 스킵)
      */
-    public void ensureOnly(String userId, String conversationId, String subject) {
+    public void ensureOnly(String userId, String conversationId, String subject, PromptType promptType) {
+        if (promptType == PromptType.PROJECT) {
+            return;
+        }
         userConversationEnsureService.ensure(userId, conversationId, subject);
     }
 
