@@ -16,18 +16,14 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * RAG 기술 구현 (역할 구분: docs/RAG_SERVICE_ROLES.md 참고).
- * 항상 userId, projectId를 인자로 받아 벡터 저장/검색만 수행. "지금 대화" 같은 컨텍스트는 모름.
- * - addDocument: 텍스트 추출 → 청킹 → 임베딩 → VectorStore 저장
- * - search / searchAsContext: conversation_id, user_id 메타데이터로 유사도 검색
+ * RAG 기술 구현 (역할 구분: docs/RAG_SERVICE_ROLES.md 참고). 항상 userId, projectId를 인자로 받아 벡터 저장/검색만 수행. "지금 대화" 같은 컨텍스트는 모름. -
+ * addDocument: 텍스트 추출 → 청킹 → 임베딩 → VectorStore 저장 - search / searchAsContext: conversation_id, user_id 메타데이터로 유사도 검색
  */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ProjectRagService {
 
-    private static final int CHUNK_SIZE = 500;
-    private static final int MIN_CHUNK_SIZE_CHARS = 200;
     private static final int DEFAULT_TOP_K = 5;
 
     private final DocumentService documentService;

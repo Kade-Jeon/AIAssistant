@@ -44,7 +44,7 @@ spring:
   # Ollama
   ai:
     ollama:
-      base-url: http://192.168.200.199:11434
+      base-url: http://192.168.200.115:11434
       embedding:
         options:
           model: qwen3-embedding:0.6b
