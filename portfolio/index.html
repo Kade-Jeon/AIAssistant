@@ -2549,6 +2549,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- TROUBLESHOOTING -->
+        <div class="tech-decisions" style="margin-top: 1.5rem;">
+          <div class="td-title">🐛 트러블슈팅</div>
+          <div class="accordion-item">
+            <button class="accordion-header" onclick="toggleAccordion(this)">
+              <span>Spring AI ChatMemoryRepository 커스텀 — 안정적 ID로 첨부파일 FK 연관관계 구현</span>
+              <span class="accordion-arrow">▼</span>
+            </button>
+            <div class="accordion-body">
+              <div class="adr-grid">
+                <span class="adr-key">문제</span>
+                <span class="adr-value">Spring AI 기본 <span class="code-inline">JdbcChatMemoryRepository</span>는 메시지 저장 시 기존 대화 전체를 <strong>삭제 후 재삽입</strong>하는 방식으로 동작합니다. 요청마다 <span class="code-inline">CHAT_MESSAGE</span> 테이블의 레코드 ID가 재생성되어, 첨부파일 정보를 저장하는 <span class="code-inline">CHAT_ATTACHMENT</span>와 FK 연관관계를 맺는 것이 불가능했습니다.</span>
+                <span class="adr-key">해결</span>
+                <span class="adr-value"><span class="code-inline">ChatMemoryRepository</span> 인터페이스를 직접 구현한 <span class="code-inline">CustomChatMemoryRepository</span>를 작성하여 기본 자동 구성(<span class="code-inline">JdbcChatMemoryRepositoryAutoConfiguration</span>)을 비활성화하고 교체했습니다.<br><br><span class="code-inline">saveAll()</span>을 <strong>전체 교체(delete + insert) → 추가(append-only)</strong> 방식으로 재정의. 저장 전 <span class="code-inline">type + content</span> 기준으로 중복을 검사해 신규 메시지만 INSERT하고, <span class="code-inline">ChatMessageEntity</span> 생성 시 <span class="code-inline">UUID.randomUUID()</span>로 ID를 최초 1회만 할당하여 이후 변경되지 않는 구조를 만들었습니다.</span>
+                <span class="adr-key">결과</span>
+                <span class="adr-value"><span class="code-inline">CHAT_MESSAGE</span> ID가 안정적으로 유지되어 <span class="code-inline">CHAT_ATTACHMENT</span>와의 FK 연관관계 및 JPA <span class="code-inline">@OneToMany</span> 매핑이 정상 동작. 프레임워크의 자동 구성보다 인터페이스 직접 구현이 도메인 요구사항을 더 정밀하게 제어할 수 있음을 확인. OCP 원칙에 따라 기존 코드 수정 없이 구현체 교체만으로 문제 해결.</span>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
 
     <!-- DIVIDER -->
