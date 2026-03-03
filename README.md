@@ -1,623 +1,452 @@
 # 🤖 AI Assistant
 
-> **Spring AI 기반 대화형 AI 어시스턴트 서비스**  
-> SSE 스트리밍, Cache-Aside 패턴, RAG, 관찰성(Observability)을 구현한 실전 AI 서비스
+<div align="center">
 
-<!-- 기술 스택 배지 -->
-![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-6DB33F?style=flat-square&logo=springboot&logoColor=white)
-![Spring AI](https://img.shields.io/badge/Spring%20AI-1.1.2-6DB33F?style=flat-square&logo=spring&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-000000?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.9-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Java](https://img.shields.io/badge/Java_21-Virtual_Thread-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring AI](https://img.shields.io/badge/Spring_AI-1.1.2-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-LLM-0055FF?style=for-the-badge)
+![pgvector](https://img.shields.io/badge/pgvector-RAG-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Tracing-425CC7?style=for-the-badge&logo=opentelemetry&logoColor=white)
+
+**온프레미스 LLM 기반의 개인화 AI 어시스턴트 서비스**
+
+*프로젝트 문서를 업로드하면 AI가 해당 맥락을 이해하고 답변하는 RAG 기반 채팅 플랫폼*
+
+</div>
 
 ---
 
 ## 📋 목차
 
-- [프로젝트 소개](#-프로젝트-소개)
-- [시연 / 데모](#-시연--데모)
-- [시스템 아키텍처](#-시스템-아키텍처)
+- [프로젝트 개요](#-프로젝트-개요)
+- [핵심 기능](#-핵심-기능)
 - [기술 스택](#-기술-스택)
-- [핵심 기술적 도전 과제](#-핵심-기술적-도전-과제)
-- [프로젝트 구조](#-프로젝트-구조)
-- [실행 방법](#-실행-방법)
-- [학습 및 성장 포인트](#-학습-및-성장-포인트)
-- [향후 발전 방향](#-향후-발전-방향)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [주요 기술적 의사결정](#-주요-기술적-의사결정-adr)
+- [모듈 구조](#-모듈-구조)
+- [API 명세](#-api-명세)
+- [로컬 실행 방법](#-로컬-실행-방법)
 
 ---
 
-## 🎯 프로젝트 소개
+## 🎯 프로젝트 개요
 
-### 내가 해결하려는 문제
+AI Assistant는 **온프레미스 Ollama LLM**을 활용한 개인화 AI 채팅 플랫폼입니다.
+클라우드 LLM API에 의존하지 않고 자체 서버에서 모델을 운영하며, 사용자가 업로드한 문서를 기반으로 답변하는 **RAG(Retrieval-Augmented Generation)** 기능을 제공합니다.
 
-LLM 기반 AI 서비스를 구축할 때 다음과 같은 실제 문제들이 발생합니다:
-
-| 문제             | 상세 설명                                |
-|----------------|--------------------------------------|
-| **대화 컨텍스트 관리** | 수천 건의 대화 히스토리를 효율적으로 저장/조회해야 함       |
-| **실시간 응답 경험**  | AI 응답 완료까지 기다리면 UX 저하, 청크 단위 스트리밍 필요 |
-| **프롬프트 버전 관리** | 프롬프트 변경 이력 추적 및 A/B 테스트 기반 마련        |
-| **파일 기반 RAG**  | PDF, HWP 등 문서를 첨부하여 AI가 참조하도록 구현     |
-| **관찰성 확보**     | AI 호출 추적, 프롬프트/응답 기록, 사용자별 모니터링      |
-
-### 접근 방식
-
-```
-[문제 인식] → [기술 선택] → [설계 결정] → [구현 및 검증]
-```
-
-1. **Spring AI 프레임워크 활용**: ChatClient, ChatMemory, Advisor 패턴으로 표준화된 구조
-2. **Cache-Aside 패턴**: Redis + PostgreSQL 이중 저장으로 성능과 영속성 확보
-3. **Reactor 기반 SSE**: 비동기 스트리밍으로 실시간 응답 경험 제공
-4. **OpenTelemetry + Langfuse**: 분산 추적 기반 관찰성 구축
-
-### 주요 기능
-
-| 기능                | 설명                              |
-|-------------------|---------------------------------|
-| 💬 **실시간 대화**     | SSE 기반 스트리밍 응답, 청크 단위 실시간 전송    |
-| 📁 **파일 기반 RAG**  | PDF, HWP, HWPX 문서 첨부 및 내용 참조 답변 |
-| 🧠 **대화 컨텍스트 관리** | 이전 대화 자동 로드, 페이징 조회 지원          |
-| 📊 **관찰성**        | AI 호출 추적, 프롬프트 버전 관리, 사용자별 모니터링 |
-| 🌐 **다국어 지원**     | 번역 프롬프트 기반 다국어 응답               |
+**핵심 문제의식:** 외부 LLM API는 비용이 높고, 민감한 데이터를 외부로 전송해야 하는 보안 위험이 있습니다. 이를 온프레미스 LLM으로 해결하되, 프로덕션 수준의 신뢰성(Idempotency,
+Observability, 스트리밍 복원력)을 갖추는 것을 목표로 설계했습니다.
 
 ---
 
-## 🖥️ 시연 / 데모
+## ✨ 핵심 기능
 
-<!-- 
-TODO: 아래 섹션에 실제 서비스 화면 캡쳐를 추가해주세요.
-권장 이미지:
-1. 메인 대화 화면 (SSE 스트리밍 응답 중인 모습)
-2. 파일 첨부 RAG 기능 시연
-3. Langfuse 관찰성 대시보드
--->
-
-### 서비스 화면
-
-<details>
-<summary>📸 메인 대화 화면</summary>
-
-<!-- 이미지 추가 예시:
-![메인 화면](./docs/images/main-screen.png)
--->
-
-> 이미지 추가 예정
-
-</details>
-
-<details>
-<summary>📸 SSE 스트리밍 응답</summary>
-
-<!-- 
-GIF로 스트리밍 응답이 청크 단위로 표시되는 모습을 캡쳐하면 좋습니다.
-![스트리밍](./docs/images/streaming.gif)
--->
-
-> 이미지 추가 예정
-
-</details>
-
-<details>
-<summary>📸 파일 첨부 RAG 기능</summary>
-
-<!-- 
-PDF/HWP 파일을 첨부하고 해당 내용을 참조하여 답변하는 모습
-![RAG](./docs/images/rag-demo.png)
--->
-
-> 이미지 추가 예정
-
-</details>
-
-<details>
-<summary>📸 Langfuse 관찰성 대시보드</summary>
-
-<!-- 
-Langfuse에서 AI 호출 트레이스가 기록되는 모습
-![Langfuse](./docs/images/langfuse-dashboard.png)
--->
-
-> 이미지 추가 예정
-
-</details>
+| 기능                     | 설명                                       |
+|------------------------|------------------------------------------|
+| 🔄 **실시간 스트리밍**        | SSE(Server-Sent Events) 기반 토큰 단위 실시간 응답  |
+| 📚 **Tool-based RAG**  | AI가 필요 시 스스로 문서 검색 도구를 호출하는 에이전트형 RAG    |
+| 🛡️ **Idempotency 보장** | Strategy Pattern 기반 멱등성 처리로 중복 AI 요청 방지  |
+| 🔭 **AI 추적 관찰**        | OpenTelemetry + Langfuse로 LLM 호출 전 구간 추적 |
+| ⚡ **동적 프롬프트**          | 코드 배포 없이 Langfuse에서 런타임 프롬프트 관리          |
 
 ---
 
-## 🏗️ 시스템 아키텍처
+## 🛠 기술 스택
 
-<!-- 
-TODO: Mermaid 또는 이미지로 아키텍처 다이어그램 추가
-권장 다이어그램:
-1. 전체 시스템 구성도
-2. 데이터 플로우 다이어그램
-3. 컴포넌트 간 관계도
--->
+### Backend Core
 
-### 전체 시스템 구성도
+| 분류              | 기술                    | 버전            |
+|-----------------|-----------------------|---------------|
+| Framework       | Spring Boot           | 3.5.9         |
+| Language        | Java (Virtual Thread) | 21            |
+| AI Framework    | Spring AI             | 1.1.2         |
+| LLM Runtime     | Ollama                | -             |
+| Embedding Model | qwen3-embedding       | 0.6b (1024차원) |
 
-<details>
-<summary>📐 아키텍처 다이어그램</summary>
+### Data & Infrastructure
 
-<!-- 이미지 추가 예시:
-![Architecture](./docs/images/architecture.png)
--->
+| 분류               | 기술                       | 역할                              |
+|------------------|--------------------------|---------------------------------|
+| Primary DB       | PostgreSQL               | 채팅 메시지 영구 저장                    |
+| Vector DB        | pgvector (HNSW + Cosine) | RAG 임베딩 저장 및 유사도 검색             |
+| Cache            | Redis                    | 채팅 메모리 L1 캐시, Idempotency 상태 관리 |
+| Document Parsing | Apache Tika + hwplib     | PDF/HWP/HWPX 텍스트 추출             |
 
-> 아키텍처 다이어그램 추가 예정
+### Observability
 
-</details>
+| 분류                | 기술                   | 역할                 |
+|-------------------|----------------------|--------------------|
+| Tracing           | OpenTelemetry 2.17.0 | 분산 추적 수집           |
+| LLM Observability | Langfuse (OTLP)      | AI 호출 추적 및 프롬프트 관리 |
+| Metrics           | Micrometer + OTLP    | 애플리케이션 메트릭         |
+| Reactive          | Project Reactor      | 비동기 스트리밍 파이프라인     |
 
-### 데이터 플로우
+---
 
+## 🏗 시스템 아키텍처
+
+```mermaid
+flowchart LR
+    Client(["🖥️ Client"])
+    
+    subgraph API["API Layer"]
+        CC["ConversationController"]
+        PC["ProjectController"]
+    end
+    
+    subgraph Service["Service Layer (Vertical Slice)"]
+        CS["ConversationService<br/>(Facade/Orchestrator)"]
+        IS["IdempotencyService<br/>(Strategy Pattern)"]
+        ME["ModelExecuteService<br/>(AI Engine)"]
+        SS["StreamingService<br/>(SSE Transport)"]
+        PS["ProjectRagService<br/>(Vector Store)"]
+        PRS["PromptService<br/>(Dynamic Prompt)"]
+    end
+    
+    subgraph Infra["Infrastructure"]
+        Ollama["🤖 Ollama<br/>(LLM Server)"]
+        PG[("🐘 PostgreSQL<br/>(Chat Messages)")]
+        PGV[("🔢 pgvector<br/>(Embeddings)")]
+        Redis[("⚡ Redis<br/>L1 Cache")]
+        Langfuse["📊 Langfuse<br/>(Prompt + Traces)"]
+    end
+
+    Client -->|"SSE Stream"| CC
+    CC --> CS
+    CS --> IS
+    CS --> ME
+    ME --> SS
+    SS -->|"SSE chunks"| Client
+    ME --> Ollama
+    ME --> PRS
+    PRS -->|"cache"| Redis
+    PRS -->|"prompt template"| Langfuse
+    CS --> PG
+    PC --> PS
+    PS --> PGV
+    ME -.->|"OTel Traces"| Langfuse
+
+    style Ollama fill:#4a90e2,color:#fff
+    style Langfuse fill:#f59e0b,color:#fff
+    style Redis fill:#dc2626,color:#fff
+    style PG fill:#0284c7,color:#fff
+    style PGV fill:#0284c7,color:#fff
 ```
-[클라이언트]
-    ↓ HTTP POST /api/v1/ai/conv (SSE)
-[ConversationController]
-    ↓ streamToSse()
-[ConversationService]
-    ├─ saveUserMessage() → CHAT_MESSAGE 테이블 저장
-    ├─ ModelExecuteService.stream()
-    │   ├─ PromptService.getLangfusePrompt() → Langfuse/Redis에서 프롬프트 조회
-    │   ├─ ChatClient.builder(chatModel)
-    │   │   └─ MessageChatMemoryAdvisor → RedisChatMemory.get() 호출
-    │   │       ├─ Redis 조회 (히트 시 즉시 반환)
-    │   │       └─ 미스 시 CustomChatMemoryRepository.findByConversationId()
-    │   │           └─ CHAT_MESSAGE 테이블 조회 → Redis 캐싱
-    │   └─ stream() → Flux<ChatResponse> 반환
-    └─ StreamingService.streamToSse()
-        ├─ Reactor publishOn() → 전용 Scheduler
-        ├─ SSE 전송 (chunk 이벤트)
-        └─ 완료 시 saveAssistantMessage() → CHAT_MESSAGE 테이블 저장
-```
 
-### 레이어 아키텍처
+### 요청 흐름 (채팅 요청)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Controller Layer                          │
-│  ConversationController, RagController, PreferenceController │
-├─────────────────────────────────────────────────────────────┤
-│                     Service Layer                            │
-│  ConversationService, ModelExecuteService, StreamingService  │
-├─────────────────────────────────────────────────────────────┤
-│                   Repository Layer                           │
-│  CustomChatMemoryRepository, ChatMessageRepository           │
-├─────────────────────────────────────────────────────────────┤
-│                  Infrastructure Layer                        │
-│  RedisChatMemory, LangfuseClient, OllamaChatModelFactory     │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant CC as ConversationController
+    participant CS as ConversationService
+    participant IS as IdempotencyService
+    participant ME as ModelExecuteService
+    participant SS as StreamingService
+    participant OL as Ollama
+
+    C->>CC: POST /api/v1/ai/conv (X-Idempotency-Key)
+    CC->>CS: executeConversation()
+    CS->>IS: checkIdempotency(key)
+    
+    alt 신규 요청
+        IS-->>CS: NoStateHandler - 처리 진행
+        CS->>CS: ConversationInitializer (신규 대화 시 제목 생성)
+        CS->>ME: executeModel(chatOptions)
+        ME->>OL: ChatClient.stream() + MessageChatMemoryAdvisor
+        OL-->>ME: Flux[String] 토큰 스트림
+        ME-->>SS: Flux 전달
+        SS-->>C: SSE chunks open / chunk... / stream_complete
+        CS->>IS: markCompleted(key)
+    else 진행 중인 요청 (InProgress)
+        IS-->>C: 409 Conflict
+    else 완료된 요청 (Completed)
+        IS-->>CS: 캐싱된 결과 반환
+    end
 ```
 
 ---
 
-## 🛠️ 기술 스택
+## 📐 주요 기술적 의사결정 (ADR)
 
-### Core
+### ADR-001: Tool-based RAG vs Pipeline RAG
 
-| 기술              | 버전    | 선택 이유                        |
-|-----------------|-------|------------------------------|
-| **Java**        | 21    | Virtual Threads로 I/O 블로킹 최적화 |
-| **Spring Boot** | 3.5.9 | 최신 Spring AI 지원, 생산성         |
-| **Spring AI**   | 1.1.2 | LLM 통합 표준화, ChatClient API   |
-| **Reactor**     | -     | 비동기 스트리밍, Backpressure 지원    |
+**맥락:** RAG 구현 방식을 선택해야 했습니다. 전통적인 Pipeline RAG는 매 요청마다 벡터 검색을 수행하고 검색 결과를 프롬프트에 무조건 포함합니다.
 
-### AI / LLM
+**결정:** Spring AI `@Tool` 어노테이션을 활용한 **Tool-based RAG** 채택
 
-| 기술              | 용도                   |
-|-----------------|----------------------|
-| **Ollama**      | 로컬 LLM 서버 (qwen2.5)  |
-| **Langfuse**    | 프롬프트 관리, AI 관찰성      |
-| **Apache Tika** | 문서 텍스트 추출 (PDF, HWP) |
+**근거:**
 
-### 인프라
+- AI 모델이 질문의 맥락을 판단하여 문서 검색 도구 호출 여부를 스스로 결정 → 불필요한 검색 감소
+- 일반 대화(`PromptType.CONVERSATION`)와 문서 기반 대화(`PromptType.PROJECT`)의 RAG 활성화를 깔끔하게 분리
+- `AgentToolProvider`가 요청별 `userId + projectId` 컨텍스트를 생성자 주입으로 `RagTools`에 전달 → ThreadLocal 없이 Virtual Thread 환경에서도 안전한
+  컨텍스트 격리
 
-| 기술                 | 용도                  |
-|--------------------|---------------------|
-| **PostgreSQL**     | 대화 히스토리 영구 저장       |
-| **Redis**          | 채팅 컨텍스트 캐싱, 프롬프트 캐싱 |
-| **OpenTelemetry**  | 분산 추적               |
-| **Docker Compose** | 개발 환경 구성            |
+**결과:** 불필요한 벡터 검색 감소 및 에이전트형 AI 동작 구현
 
 ---
 
-## 🔥 핵심 기술적 도전 과제
+### ADR-002: Idempotency 처리에 Strategy Pattern 적용
 
-### 1. Cache-Aside 패턴으로 이중 저장 전략
+**맥락:** SSE 스트리밍 응답에서 중복 요청을 처리하는 방식이 필요했습니다. Idempotency Key의 상태(없음/진행 중/완료/실패)에 따라 처리 로직이 달라집니다.
 
-#### 문제 상황
+**결정:** `IdempotencyStateHandler` 인터페이스 + 4가지 구현체(Strategy Pattern)
 
-- Spring AI의 기본 `JdbcChatMemoryRepository`는 자체 스키마(`SPRING_AI_CHAT_MEMORY`) 사용
-- 우리는 `message_id`(UUID)를 포함한 자체 `CHAT_MESSAGE` 스키마가 필요
-- 매 요청마다 RDB 조회 시 성능 병목 발생
-
-#### 해결 방법
-
-`ChatMemoryRepository`와 `ChatMemory` 인터페이스를 커스텀 구현하여 Cache-Aside 패턴 적용:
-
-```java
-// RedisChatMemory.java - Cache-Aside 패턴 구현
-@Override
-public List<Message> get(String conversationId) {
-    String cacheKey = cacheKey(conversationId);
-    Optional<Object> cached = cache.get(cacheKey);
-
-    if (cached.isPresent()) {
-        return fromJson(json); // Redis 히트 → 즉시 반환
-    }
-
-    // Redis 미스 → RDB 조회 → Redis 캐싱
-    List<Message> fromDb = repository.findByConversationId(conversationId);
-    writeCacheWithTimestamp(conversationId, fromDb);
-    return fromDb;
-}
+```
+IdempotencyStateHandler (interface)
+├── NoStateHandler        → 신규 처리 시작
+├── InProgressStateHandler → 409 Conflict 반환
+├── CompletedStateHandler  → 캐싱된 결과 반환
+└── FailedStateHandler     → 재처리 허용
 ```
 
-#### 트레이드오프
+**근거:**
 
-| 장점                    | 단점                            |
-|-----------------------|-------------------------------|
-| RDB 조회 비용 절감          | Redis 장애 시 RDB 폴백으로 일시적 성능 저하 |
-| 대화 시작 시 지연 시간 감소      | 캐시 일관성 관리 필요                  |
-| Spring AI 인터페이스 호환 유지 | 구현 복잡도 증가                     |
+- 각 상태별 처리 로직을 독립적인 클래스로 캡슐화 → 단일 책임 원칙(SRP)
+- 새로운 상태 추가 시 기존 코드 수정 없이 구현체 추가만으로 확장 가능 → 개방/폐쇄 원칙(OCP)
+- `StreamingIdempotencyCoordinator`가 상태 판별 후 핸들러에 위임하는 구조로 관심사 분리
 
 ---
 
-### 2. SSE 스트리밍과 리소스 누수 방지
+### ADR-003: 채팅 메모리 이중 저장소 (Redis L1 + PostgreSQL L2)
 
-#### 문제 상황
+**맥락:** AI 대화 컨텍스트(이전 메시지)를 효율적으로 제공해야 합니다. 매 요청마다 DB를 조회하면 지연이 발생하고, Redis만 사용하면 서버 재시작 시 메모리가 유실됩니다.
 
-- Spring AI의 `ChatClient.stream()`은 `Flux<ChatResponse>` 반환
-- 클라이언트가 연결을 끊어도 AI 모델 호출이 계속 진행되어 리소스 낭비
-- `SseEmitter`의 콜백과 `Flux` 구독이 분리되어 있음
+**결정:** Redis를 L1 캐시, PostgreSQL을 L2 영구 저장소로 사용하는 이중 레이어 구조
 
-#### 해결 방법
+| 레이어 | 구현체                          | 역할                     |
+|-----|------------------------------|------------------------|
+| L1  | `RedisChatMemory`            | 빠른 조회 (TTL 기반), 캐시 워밍업 |
+| L2  | `CustomChatMemoryRepository` | 영구 저장, 중복 방지 로직 내장     |
 
-`Disposable`을 저장하여 연결 종료 시 즉시 구독 취소:
+**근거:**
 
-```java
-// StreamingService.java - 리소스 누수 방지
-Flux<ChatResponse> offloadedStream = chatResponseStream
-                .publishOn(sseStreamingScheduler);
-
-Disposable disposable = offloadedStream.subscribe(
-        chatResponse -> { /* SSE 전송 */ },
-        error -> { /* 에러 처리 */ },
-        () -> { /* 완료 처리 + 콜백 실행 */ }
-);
-
-// 연결 종료 시 AI 호출 중단
-emitter.
-
-onCompletion(() ->disposable.
-
-dispose());
-        emitter.
-
-onTimeout(() ->disposable.
-
-dispose());
-        emitter.
-
-onError(e ->disposable.
-
-dispose());
-```
-
-#### 결과
-
-- 클라이언트 연결 종료 시 즉시 AI 모델 호출 중단
-- 서버 리소스 절약
-- `AtomicBoolean`으로 중복 dispose 방지
+- 응답 지연 최소화와 데이터 내구성을 동시에 확보
+- Spring AI의 `ChatMemoryRepository` 인터페이스 구현으로 프레임워크 교체 비용 최소화
+- `JdbcChatMemoryRepositoryAutoConfiguration` 제외 후 직접 구현하여 비즈니스 로직(중복 방지) 포함
 
 ---
 
-### 3. MessageChatMemoryAdvisor 중복 저장 문제
+### ADR-004: Virtual Thread 전면 활성화
 
-#### 문제 상황
+**맥락:** SSE 스트리밍 특성상 다수의 동시 연결이 발생하며, 각 연결은 Ollama 응답을 기다리는 I/O 블로킹 작업을 포함합니다.
 
-- `MessageChatMemoryAdvisor`가 대화 종료 시 자동으로 `ChatMemory.add()` 호출
-- `ConversationService`에서도 이미 저장했으므로 중복 저장 발생
-- 파일 첨부 시 전체 내용이 아닌 "사용자 요청:" 이후만 저장해야 함
+**결정:** Java 21 Virtual Thread 전면 활성화 (`spring.threads.virtual.enabled: true`)
 
-#### 해결 방법
+**근거:**
 
-저장 로직을 서비스 레이어에서 직접 제어:
-
-```java
-// CustomChatMemoryRepository.java - 중복 저장 방지
-@Override
-public void saveAll(String conversationId, List<Message> messages) {
-    List<Message> existingMessages = findByConversationId(conversationId);
-    Set<String> existingKeys = existingMessages.stream()
-            .map(m -> m.getContent() + "|" + m.getType())
-            .collect(Collectors.toSet());
-
-    // 중복이면 스킵, 새 메시지만 저장
-    messages.stream()
-            .filter(m -> !existingKeys.contains(m.getContent() + "|" + m.getType()))
-            .forEach(this::save);
-}
-```
-
-```java
-// RedisChatMemory.java - 캐시만 갱신, 저장 안 함
-@Override
-public void add(String conversationId, List<Message> messages) {
-    // 실제 저장은 ConversationService에서 처리
-    // 여기서는 캐시만 갱신
-    updateCacheOnly(conversationId, messages);
-}
-```
+- 기존 플랫폼 스레드 풀 방식은 스레드 수 제한으로 동시 SSE 연결에 병목 발생
+- Virtual Thread는 I/O 블로킹 시 캐리어 스레드를 해제하여 수천 개의 동시 연결 처리 가능
+- SSE 전용 스케줄러(`SseStreamingConfig`)를 별도로 두어 스트리밍 I/O를 메인 스레드 풀과 분리
 
 ---
 
-### 4. Think Block 자동 제거
+### ADR-005: 동적 프롬프트 관리 (Langfuse + Redis 캐시)
 
-#### 문제 상황
+**맥락:** AI 모델의 동작(프롬프트, 파라미터)을 변경할 때마다 코드 배포가 필요하면 운영 유연성이 낮습니다.
 
-- 일부 LLM(DeepSeek, Qwen 등)은 추론 과정을 `<think>...</think>` 태그로 응답
-- 최종 응답에서 이 태그를 제거해야 함
-- 스트리밍 중에는 태그가 여러 청크에 걸쳐 있을 수 있음
+**결정:** Langfuse에 프롬프트 템플릿을 저장하고, 런타임에 API로 조회 + Redis 캐시로 성능 최적화
 
-#### 해결 방법
+**구조:**
 
-```java
-// ThinkBlockProcessor.java - 정규식 기반 Think Block 제거
-public String process(String content) {
-    if (content == null)
-        return null;
-
-    // <think>...</think> 블록 제거
-    String processed = THINK_PATTERN.matcher(content).replaceAll("");
-
-    // 불완전한 태그 처리 (스트리밍 중)
-    if (processed.contains("<think>") && !processed.contains("</think>")) {
-        int startIdx = processed.indexOf("<think>");
-        processed = processed.substring(0, startIdx);
-    }
-
-    return processed.trim();
-}
 ```
+Langfuse (프롬프트 저장소)
+  → LangfuseClient (REST 호출, 5xx 재시도 내장)
+    → PromptService (비즈니스 로직)
+      → RedisCacheService (1시간 TTL 캐시)
+```
+
+**근거:**
+
+- 코드 배포 없이 temperature, topK, topP, model명, 시스템 프롬프트 변경 가능
+- `LangfusePromptTemplate`에 모델 파라미터까지 포함되어 프롬프트와 모델 설정을 일원화 관리
+- Langfuse API 장애 시 재시도(max 3회, delay 2초)로 복원력 확보
 
 ---
 
-### 5. 페이징 조회와 캐시 병합
-
-#### 문제 상황
-
-- 대화 목록 스크롤 업 시 이전 메시지 조회 필요
-- 페이징 결과와 기존 캐시를 병합해야 함
-- 단순 append 시 중복 메시지 발생
-
-#### 해결 방법
-
-```java
-// RedisChatMemory.java - 페이징 조회 + 캐시 병합
-public List<Message> getWithPaging(String conversationId,
-                                   Instant beforeTimestamp,
-                                   int limit) {
-    List<Message> pagedMessages = repository
-            .findByConversationIdAndTimestampBefore(
-                    conversationId, beforeTimestamp, limit);
-
-    List<Message> cached = get(conversationId);
-    List<Message> merged = mergeMessages(cached, pagedMessages);
-    writeCache(conversationId, merged);
-    return merged;
-}
-
-private List<Message> mergeMessages(List<Message> cached,
-                                    List<Message> newMessages) {
-    // content + messageType을 키로 중복 제거
-    Map<String, Message> messageMap = new LinkedHashMap<>();
-    Stream.concat(cached.stream(), newMessages.stream())
-            .forEach(m -> messageMap.putIfAbsent(
-                    m.getContent() + "|" + m.getType(), m));
-    return new ArrayList<>(messageMap.values());
-}
-```
-
----
-
-## 📁 프로젝트 구조
+## 📁 모듈 구조
 
 ```
 src/main/java/com/kade/AIAssistant/
-├── feature/                          # 비즈니스 로직 (기능별 패키징)
-│   ├── conversation/
-│   │   ├── controller/               # REST API 엔드포인트
-│   │   │   ├── ConversationController.java   # 대화 API (SSE 스트리밍)
-│   │   │   └── RagController.java            # 파일 업로드 RAG
+├── agent/                          # AI Tool/Agent 구성
+│   ├── provider/AgentToolProvider  # 요청별 컨텍스트 포함 Tool 생성
+│   └── tool/RagTools               # @Tool 기반 문서 검색 도구
+│
+├── common/                         # 공통 모듈 (횡단 관심사)
+│   ├── constants/PromptVariables
+│   ├── enums/                      # Language, MessageType, PromptType, UserPlan
+│   ├── exceptions/                 # BaseException, GlobalExceptionHandler
+│   │   └── customs/                # AiModelException, IdempotencyConflictException 등
+│   ├── filters/UserIdRequiredFilter
+│   ├── prompt/                     # PromptService, PromptTemplateProvider
+│   └── utils/                      # StreamingChunkProcessor, ChatResponseMapper
+│
+├── config/                         # Spring 설정
+│   ├── OllamaConfig                # ChatModel 기본 옵션
+│   ├── RedisChatMemoryConfig       # Redis 채팅 메모리 빈 등록
+│   ├── VectorStoreConfig           # pgvector 커스텀 설정
+│   ├── SseStreamingConfig          # SSE 전용 스케줄러
+│   └── ObservabilityConfig         # OTel 관찰 필터
+│
+├── feature/                        # 기능별 Vertical Slice
+│   ├── conversation/               # 핵심 AI 채팅
+│   │   ├── controller/
 │   │   ├── service/
-│   │   │   ├── ConversationService.java      # 대화 오케스트레이션
-│   │   │   ├── ModelExecuteService.java      # AI 모델 호출
-│   │   │   ├── StreamingService.java         # SSE 스트리밍 처리
-│   │   │   └── RagService.java               # 문서 추출 (Tika)
-│   │   ├── entity/                   # JPA 엔티티
-│   │   └── repository/               # 데이터 접근 계층
-│   ├── preference/                   # 사용자 설정 기능
-│   └── login/                        # 로그인 기능
+│   │   │   ├── ConversationService     # Facade (오케스트레이터)
+│   │   │   ├── ModelExecuteService     # Ollama 호출 엔진
+│   │   │   ├── StreamingService        # SSE 전송 레이어
+│   │   │   ├── IdempotencyService      # 멱등성 관리
+│   │   │   ├── DocumentService         # Tika 문서 파싱
+│   │   │   └── idempotency/            # Strategy Pattern 구현체 4종
+│   │   ├── entity/
+│   │   └── repository/
+│   ├── project/                    # RAG 프로젝트 (문서 업로드)
+│   ├── preference/                 # 사용자 설정
+│   ├── login/                      # 인증
+│   └── statistic/                  # Langfuse 통계 조회
 │
-├── infra/                            # 외부 시스템 통합
-│   ├── redis/
-│   │   ├── context/
-│   │   │   ├── RedisChatMemory.java          # ChatMemory 구현 (Cache-Aside)
-│   │   │   └── CustomChatMemoryRepository.java
-│   │   └── prompt/
-│   │       └── PromptCacheService.java       # 프롬프트 캐싱
-│   ├── ollama/
-│   │   └── factory/
-│   │       └── OllamaChatModelFactory.java   # 모델 인스턴스 팩토리
-│   └── langfuse/
-│       ├── observability/                    # OpenTelemetry 통합
-│       │   ├── LangfuseBaggageSpanProcessor.java
-│       │   ├── LangfuseUserTrackingFilter.java
-│       │   └── ChatModelCompletionContentObservationFilter.java
-│       └── prompt/
-│           └── LangfuseClient.java           # Langfuse API 클라이언트
-│
-├── common/                           # 공통 유틸리티
-│   ├── prompt/
-│   │   └── PromptService.java                # 프롬프트 조회 (캐시 + Langfuse)
-│   ├── exceptions/                   # 예외 처리
-│   └── utils/
-│       ├── StreamingChunkProcessor.java      # 스트리밍 청크 처리
-│       └── ThinkBlockProcessor.java          # Think 블록 제거
-│
-├── config/                           # Spring 설정
-│   ├── RedisChatMemoryConfig.java
-│   ├── OllamaConfig.java
-│   └── ObservabilityConfig.java
-│
-└── domain/                           # DTO (Request/Response)
-    ├── request/
-    └── response/
+└── infra/                          # 외부 시스템 연동
+    ├── langfuse/
+    │   ├── observability/           # BaggageSpanProcessor, UserTrackingFilter
+    │   └── prompt/                  # LangfuseClient, LangfusePromptTemplate
+    ├── ollama/factory/             # OllamaChatModelFactory (@Cacheable)
+    └── redis/
+        ├── context/                 # RedisChatMemory, CustomChatMemoryRepository
+        └── prompt/RedisCacheService
 ```
-
-### 설계 원칙
-
-| 원칙                            | 적용                                                                       |
-|-------------------------------|--------------------------------------------------------------------------|
-| **Single Responsibility**     | 각 서비스가 명확한 책임 (ConversationService는 오케스트레이션, ModelExecuteService는 AI 호출) |
-| **Dependency Inversion**      | 인터페이스(`ChatMemory`, `ChatMemoryRepository`)에 의존                          |
-| **Feature-based Packaging**   | 도메인별로 기능을 묶어 확장성 확보                                                      |
-| **Infrastructure Separation** | 외부 시스템(Redis, Ollama, Langfuse) 의존성을 명확히 분리                              |
 
 ---
 
-## 🚀 실행 방법
+## 📡 API 명세
 
-### 1. 인프라 실행 (Docker Compose)
+### 인증
 
-```bash
-cd docker
-docker compose up -d
+| Method | Endpoint             | 설명  |
+|--------|----------------------|-----|
+| `POST` | `/api/v1/auth/login` | 로그인 |
+
+### 대화 (Conversation)
+
+| Method   | Endpoint                                    | 설명            | 비고                               |
+|----------|---------------------------------------------|---------------|----------------------------------|
+| `POST`   | `/api/v1/ai/conv`                           | AI 채팅 (일반)    | SSE 스트리밍, `X-Idempotency-Key` 헤더 |
+| `POST`   | `/api/v1/ai/conv/file`                      | AI 채팅 (파일 첨부) | Multipart, PDF/HWP/HWPX 지원       |
+| `GET`    | `/api/v1/ai/conv`                           | 대화 목록 조회      | 페이지네이션                           |
+| `GET`    | `/api/v1/ai/conv/{conversationId}`          | 대화 상세 조회      |                                  |
+| `GET`    | `/api/v1/ai/conv/{conversationId}/messages` | 메시지 목록 조회     |                                  |
+| `PATCH`  | `/api/v1/ai/conv/{conversationId}`          | 대화 제목 수정      |                                  |
+| `DELETE` | `/api/v1/ai/conv/{conversationId}`          | 대화 삭제         |                                  |
+
+### SSE 이벤트 타입
+
+```
+open           → 스트리밍 시작 (conversationId 포함)
+chunk          → AI 응답 토큰 (OpenAI 호환 ChatCompletionChunk 형식)
+stream_complete → 스트리밍 완료
+error          → 오류 발생
 ```
 
-실행되는 서비스:
+### RAG 프로젝트
 
-| 서비스                   | 포트    | 용도              |
-|-----------------------|-------|-----------------|
-| Langfuse              | 3000  | 프롬프트 관리, 관찰성    |
-| redis-app             | 6389  | 애플리케이션 캐싱       |
-| postgres-app          | 54321 | 대화 히스토리 저장      |
-| Redis (Langfuse)      | 6379  | Langfuse 내부 캐싱  |
-| PostgreSQL (Langfuse) | 5432  | Langfuse 메타데이터  |
-| ClickHouse            | -     | Langfuse 이벤트 저장 |
-| MinIO                 | -     | Langfuse 파일 저장  |
+| Method   | Endpoint                                   | 설명              |
+|----------|--------------------------------------------|-----------------|
+| `POST`   | `/api/v1/ai/proj`                          | 프로젝트 생성         |
+| `GET`    | `/api/v1/ai/proj`                          | 프로젝트 목록 조회      |
+| `GET`    | `/api/v1/ai/proj/{projectId}`              | 프로젝트 상세 조회      |
+| `DELETE` | `/api/v1/ai/proj/{projectId}`              | 프로젝트 삭제         |
+| `POST`   | `/api/v1/ai/proj/{projectId}/docs`         | 문서 업로드 (벡터 임베딩) |
+| `GET`    | `/api/v1/ai/proj/{projectId}/docs`         | 문서 목록 조회        |
+| `DELETE` | `/api/v1/ai/proj/{projectId}/docs/{docId}` | 문서 삭제           |
 
-### 2. Ollama 설치 및 모델 다운로드
+### 설정 및 통계
+
+| Method  | Endpoint          | 설명                                           |
+|---------|-------------------|----------------------------------------------|
+| `GET`   | `/api/v1/ai/pref` | 사용자 선호도 조회                                   |
+| `PATCH` | `/api/v1/ai/pref` | 사용자 선호도 수정 (nickname, occupation, extraInfo) |
+| `GET`   | `/api/v1/ai/stat` | Langfuse 관찰 통계 조회                            |
+
+---
+
+## 🚀 로컬 실행 방법
+
+### 필수 요구사항
+
+- Java 21+
+- Docker & Docker Compose
+- Ollama 서버 (로컬 또는 원격)
+- Langfuse 계정 (프롬프트 관리용)
+
+### 환경 변수 설정
 
 ```bash
-# Ollama 설치 (macOS)
-brew install ollama
-
-# 모델 다운로드
-ollama pull qwen2.5:1.5b
-
-# Ollama 서버 실행
-ollama serve
+export DB_USERNAME=postgres
+export DB_PASSWORD=postgres
+export LANGFUSE_PUBLIC_KEY=pk-lf-...
+export LANGFUSE_SECRET_KEY=sk-lf-...
 ```
 
-### 3. 애플리케이션 실행
+### 인프라 실행 (Docker)
 
 ```bash
+# PostgreSQL (pgvector 확장 포함)
+docker run -d \
+  --name postgres-ai \
+  -e POSTGRES_DB=aichat \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 54321:5432 \
+  pgvector/pgvector:pg16
+
+# Redis
+docker run -d \
+  --name redis-ai \
+  -p 6389:6379 \
+  redis:7-alpine
+```
+
+### 애플리케이션 실행
+
+```bash
+# 빌드
+./gradlew build
+
+# 실행
 ./gradlew bootRun
+
+# 또는 JAR 실행
+java -jar build/libs/AIAssistant-0.0.1-SNAPSHOT.jar
 ```
 
-- 애플리케이션: http://localhost:8080
-- Langfuse: http://localhost:3000
-
-### 4. API 테스트
+### Ollama 모델 준비
 
 ```bash
-# 대화 API (SSE 스트리밍)
-curl -X POST http://localhost:8080/api/v1/ai/conv \
-  -H "Content-Type: application/json" \
-  -H "USER-ID: test-user" \
-  -d '{"conversationId": "conv-1", "message": "안녕하세요?"}'
+# 채팅 모델
+ollama pull qwen3:4b
+
+# 임베딩 모델
+ollama pull qwen3-embedding:0.6b
 ```
 
 ---
 
-## 📚 학습 및 성장 포인트
+## 📈 성능 및 운영 특성
 
-### 이 프로젝트를 통해 배운 것
-
-#### 1. Spring AI 프레임워크 이해
-
-- `ChatClient`, `ChatMemory`, `ChatMemoryRepository` 인터페이스 구조
-- `Advisor` 패턴을 통한 대화 컨텍스트 관리
-- 기본 구현체의 한계와 커스텀 구현 필요성
-
-#### 2. 캐시 전략 설계
-
-- Cache-Aside 패턴의 실제 구현
-- 캐시 일관성 관리의 복잡성
-- TTL vs 명시적 무효화 트레이드오프
-
-#### 3. 반응형 프로그래밍
-
-- Reactor `Flux`/`Mono` 기반 비동기 처리
-- SSE 스트리밍과 리소스 관리
-- 클라이언트 연결 종료 시 적절한 정리
-
-#### 4. 관찰성(Observability) 구축
-
-- OpenTelemetry + Langfuse 통합
-- 분산 추적의 필요성과 구현 방법
-- 커스텀 Span Processor 구현
-
-#### 5. 기술적 의사결정 경험
-
-- Spring AI 기본 구현체 vs 커스텀 구현 (저장 로직 제어 필요)
-- Redis vs RDB 단일 저장소 (성능 + 영속성 둘 다 필요)
-- 동기 vs 비동기 처리 (UX를 위한 스트리밍 선택)
+| 항목              | 설정값                      | 설명                     |
+|-----------------|--------------------------|------------------------|
+| SSE 타임아웃        | 20분                      | _테스트 개발 하드웨어 성능 이슈_    |
+| 스트리밍 재시도        | 최대 3회 (100ms~2000ms 백오프) | Ollama 일시적 장애 복원       |
+| Idempotency TTL | 24시간                     | 중복 요청 방지 유효 기간         |
+| 컨텍스트 메시지 수      | 20개                      | AI에 전달되는 이전 대화 수       |
+| 트레이싱 샘플링        | 100%                     | 모든 요청 추적 (운영 환경 조절 필요) |
+| 프롬프트 캐시 TTL     | 1시간                      | Langfuse API 호출 최소화    |
 
 ---
 
-## 🗺️ 향후 발전 방향
+<div align="center">
 
-### 로드맵
+Made with ☕ and Spring Boot
 
-```
-Phase 1: 현재 (MVP)
-├── ✅ SSE 스트리밍 대화
-├── ✅ Cache-Aside 패턴
-├── ✅ 파일 첨부 RAG
-└── ✅ Langfuse 관찰성
-
-Phase 2: 단기 목표
-├── 🔲 Vector DB 기반 RAG
-├── 🔲 Rate Limiting (Redis 기반)
-├── ✅ 스트리밍 재시도 로직
-├── 🔲 ElasticSearch 내용 검색 도입
-└── 🔲 대화 내보내기 (PDF/JSON)
-
-Phase 3: 중기 목표
-├── 🔲 멀티 모델 지원 (동적 라우팅)
-├── 🔲 프롬프트 A/B 테스트
-├── 🔲 대화 히스토리 압축/아카이빙
-└── 🔲 관리자 대시보드
-
-Phase 4: 장기 목표
-├── 🔲 에이전틱 기능 (Function Calling, Tool Use)
-├── 🔲 멀티 스텝 추론
-└── 🔲 사용자별 통계/분석
-```
-
-### 현재 한계
-
-| 한계            | 설명                                      |
-|---------------|-----------------------------------------|
-| Vector DB 미구현 | RAG는 파일 첨부 형식만 지원, 벡터 검색 미지원            |
-| 단일 모델         | 개발 PC 성능 이슈로 경량 모델만 사용                  |
-| 에이전틱 미지원      | Function Calling, Tool Use 등 에이전트 기능 없음 |
-
----
-
-<p align="center">
-  Made with ☕ and Spring AI
-</p>
+</div>
