@@ -1351,104 +1351,6 @@
                     <button class="accordion-header" onclick="toggleAccordion(this)">
                 <span class="exp-achievement-title">
                   <span class="achievement-num">01</span>
-                  KISTI 프라이빗 클라우드 ELK 모니터링 시스템 구축
-                </span>
-                        <span class="accordion-arrow">▼</span>
-                    </button>
-                    <div class="accordion-body">
-                        <div class="achievement-body">
-                            <div class="achievement-row">
-                                <span class="achievement-key situation">상황</span>
-                                <span
-                                >프라이빗 클라우드 환경에서 다중 서버를 운영하면서
-                      서버별로 로그가 분산되어 장애 발생 시 원인 파악에 시간이
-                      걸리고, 서버 접근 권한 관리도 일원화되지 않은
-                      상태였습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key action">행동</span>
-                                <span
-                                >Docker 기반으로 ELK
-                      Stack(Elasticsearch·Logstash·Kibana)을 구성하고, Fleet +
-                      Elastic Agent로 서버별 로그를 중앙에서 수집하도록 구조를
-                      잡았습니다. 부서 역할에 따라 Admin / Readonly 권한을 분리
-                      적용하고, Elastic APM으로 Java 메일 서비스의 HTTP 요청
-                      흐름과 응답 시간도 수집했습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key result">결과</span>
-                                <span
-                                >한국과학기술정보연구원(KISTI) 프라이빗 클라우드 인프라에
-                      도입 (2025.02~). 여러 서버의 로그를 Kibana 단일 화면에서
-                      조회할 수 있게 되어 장애 원인 파악 속도가 개선되고, 권한
-                      분리로 보안 관리 체계도 정비되었습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key lesson">배운 점</span>
-                                <span>다중 서버 환경에서 서버를 직접 오가며 로그를 확인하는 운영 방식의
-                      비효율을 체감하고, 도입 근거와 구성안을 직접 정리해 제안했습니다.
-                      불편함에서 끝내지 않고 문제를 정의하고 해결 방향을 제시하는 것이
-                      개발자의 역할임을 확인했습니다.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-item">
-                    <button class="accordion-header" onclick="toggleAccordion(this)">
-                <span class="exp-achievement-title">
-                  <span class="achievement-num">02</span>
-                  고객사 SMS/MMS 외부 API 연동 개발
-                </span>
-                        <span class="accordion-arrow">▼</span>
-                    </button>
-                    <div class="accordion-body">
-                        <div class="achievement-body">
-                            <div class="achievement-row">
-                                <span class="achievement-key situation">상황</span>
-                                <span
-                                >클라우드 메일 서비스 고객사에서 기존 SMS 기능 외에
-                      MMS(이미지 첨부 발송) 기능 추가를 요청했습니다. 기존 SMS
-                      로직이 확장을 고려하지 않은 구조여서, 그대로 MMS를 얹으면
-                      기존 기능 안정성에 영향을 줄 우려가 있었습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key action">행동</span>
-                                <span
-                                >기존 SMS 발송 흐름을 분석하여 공통 발송 로직과 메시지
-                      타입별 처리 로직을 분리하는 구조로 재설계했습니다. 외부
-                      통신사 MMS API 연동, 이미지 파일 검증 및 예외 처리, 엑셀
-                      기반 대량 발송 기능(파일 파싱 → 데이터 검증 → 배치 처리)을
-                      단독으로 담당했습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key result">결과</span>
-                                <span
-                                >한국농수산식품유통공사 대상 운영 적용 (2025.06~). 기존
-                      SMS 기능의 안정성을 유지하면서 MMS 기능을 성공적으로
-                      추가했고, 고객사 대량 발송 업무 처리 기반을
-                      마련했습니다.</span
-                                >
-                            </div>
-                            <div class="achievement-row">
-                                <span class="achievement-key lesson">배운 점</span>
-                                <span>통신사 API 문서가 불충분한 상황에서 직접 문의하며 연동을 완성한 경험을 통해,
-                      외부 API 연동 시 스펙 출처·제약 사항·참고 링크를 코드에 명시적으로
-                      남겨 인수인계를 고려하는 문서화 원칙을 세우게 되었습니다.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-item">
-                    <button class="accordion-header" onclick="toggleAccordion(this)">
-                <span class="exp-achievement-title">
-                  <span class="achievement-num">03</span>
                   Spring AI 기반 공공 메일 서비스 AI 기능 PoC
                 </span>
                         <span class="accordion-arrow">▼</span>
@@ -1499,6 +1401,104 @@
                       만드는지 파악하고, Spring AI 기반 추상화 구조 전환을 직접 제안했습니다.
                       기능 도입의 목적뿐 아니라 확장 가능성과 운영 비용까지 고려하는 것이
                       설계의 출발점임을 이 프로젝트를 통해 확인했습니다.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                <span class="exp-achievement-title">
+                  <span class="achievement-num">02</span>
+                  KISTI 프라이빗 클라우드 ELK 모니터링 시스템 구축
+                </span>
+                        <span class="accordion-arrow">▼</span>
+                    </button>
+                    <div class="accordion-body">
+                        <div class="achievement-body">
+                            <div class="achievement-row">
+                                <span class="achievement-key situation">상황</span>
+                                <span
+                                >프라이빗 클라우드 환경에서 다중 서버를 운영하면서
+                      서버별로 로그가 분산되어 장애 발생 시 원인 파악에 시간이
+                      걸리고, 서버 접근 권한 관리도 일원화되지 않은
+                      상태였습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key action">행동</span>
+                                <span
+                                >Docker 기반으로 ELK
+                      Stack(Elasticsearch·Logstash·Kibana)을 구성하고, Fleet +
+                      Elastic Agent로 서버별 로그를 중앙에서 수집하도록 구조를
+                      잡았습니다. 부서 역할에 따라 Admin / Readonly 권한을 분리
+                      적용하고, Elastic APM으로 Java 메일 서비스의 HTTP 요청
+                      흐름과 응답 시간도 수집했습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key result">결과</span>
+                                <span
+                                >한국과학기술정보연구원(KISTI) 프라이빗 클라우드 인프라에
+                      도입 (2025.02~). 여러 서버의 로그를 Kibana 단일 화면에서
+                      조회할 수 있게 되어 장애 원인 파악 속도가 개선되고, 권한
+                      분리로 보안 관리 체계도 정비되었습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key lesson">배운 점</span>
+                                <span>다중 서버 환경에서 서버를 직접 오가며 로그를 확인하는 운영 방식의
+                      비효율을 체감하고, 도입 근거와 구성안을 직접 정리해 제안했습니다.
+                      불편함에서 끝내지 않고 문제를 정의하고 해결 방향을 제시하는 것이
+                      개발자의 역할임을 확인했습니다.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                <span class="exp-achievement-title">
+                  <span class="achievement-num">03</span>
+                  고객사 SMS/MMS 외부 API 연동 개발
+                </span>
+                        <span class="accordion-arrow">▼</span>
+                    </button>
+                    <div class="accordion-body">
+                        <div class="achievement-body">
+                            <div class="achievement-row">
+                                <span class="achievement-key situation">상황</span>
+                                <span
+                                >클라우드 메일 서비스 고객사에서 기존 SMS 기능 외에
+                      MMS(이미지 첨부 발송) 기능 추가를 요청했습니다. 기존 SMS
+                      로직이 확장을 고려하지 않은 구조여서, 그대로 MMS를 얹으면
+                      기존 기능 안정성에 영향을 줄 우려가 있었습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key action">행동</span>
+                                <span
+                                >기존 SMS 발송 흐름을 분석하여 공통 발송 로직과 메시지
+                      타입별 처리 로직을 분리하는 구조로 재설계했습니다. 외부
+                      통신사 MMS API 연동, 이미지 파일 검증 및 예외 처리, 엑셀
+                      기반 대량 발송 기능(파일 파싱 → 데이터 검증 → 배치 처리)을
+                      단독으로 담당했습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key result">결과</span>
+                                <span
+                                >한국농수산식품유통공사 대상 운영 적용 (2025.06~). 기존
+                      SMS 기능의 안정성을 유지하면서 MMS 기능을 성공적으로
+                      추가했고, 고객사 대량 발송 업무 처리 기반을
+                      마련했습니다.</span
+                                >
+                            </div>
+                            <div class="achievement-row">
+                                <span class="achievement-key lesson">배운 점</span>
+                                <span>통신사 API 문서가 불충분한 상황에서 직접 문의하며 연동을 완성한 경험을 통해,
+                      외부 API 연동 시 스펙 출처·제약 사항·참고 링크를 코드에 명시적으로
+                      남겨 인수인계를 고려하는 문서화 원칙을 세우게 되었습니다.</span>
                             </div>
                         </div>
                     </div>
