@@ -1399,9 +1399,10 @@
                                 >레거시 메일 서비스에는 이미 AI 호출 기능이 있었는데,
                       <code>RestTemplate</code>으로 LLM API를 직접 호출하는
                       방식이었습니다. 시스템 프롬프트·사용자 메시지·컨텍스트가
-                      구분 없이 하나의 문자열로 합쳐져 전송되다 보니 AI 응답
-                      품질이 낮았고, 프롬프트를 정교하게 다듬거나 RAG·에이전트
-                      구조로 확장하는 것이 구조적으로 어려운 상태였습니다.</span
+                      구분 없이 하나의 문자열로 합쳐져 전송되다 보니                       AI 응답
+                      품질이 낮았고, 프롬프트 엔지니어링을 반복해도 응답 품질이
+                      오르지 않았으며 RAG·에이전트 구조로 확장하는 것도 구조적으로
+                      불가능한 상태였습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
@@ -1423,20 +1424,24 @@
                                 <span class="achievement-key result">결과</span>
                                 <span
                                 >한국지능정보사회진흥원(NIA) 대상 번역·메일 작성 AI 기능
-                      베타 운영 도입 (2026.01~). 기존 RestTemplate 방식 대비
-                      프롬프트 구조가 정리되어 응답 품질이 개선되었고,
-                      RAG·에이전트·Observability로 확장 가능한 구조를 사전에
-                      갖춰 두었습니다. 이 경험을 바탕으로 현재 포트폴리오
-                      프로젝트(AI Assistant)에서 RAG와 Langfuse 연동을 직접
-                      구현하게 되었습니다.</span
+                      베타 운영 도입 (2026.01~). 단일 텍스트로 합쳐 전송하던
+                      구조적 한계로 인해 <strong>프롬프트 엔지니어링을 반복해도
+                      응답 품질이 오르지 않던 문제를 해소</strong>했고, ChatClient
+                      역할 분리 구조 전환 후 응답 일관성이 눈에 띄게 향상되었습니다.
+                      공공 클라우드 서비스 <strong>최초 AI 기능</strong>으로 채택되었고,
+                      이후 RAG 기능 추가 확장 요청이 들어왔지만 사전 설계 덕분에
+                      재설계 없이 대응 가능한 상태입니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key lesson">배운 점</span>
-                                <span>RestTemplate 기반의 단기 동작 중심 구현이 장기적으로 어떤 유지보수 비용을
-                      만드는지 파악하고, Spring AI 기반 추상화 구조 전환을 직접 제안했습니다.
-                      기능 도입의 목적뿐 아니라 확장 가능성과 운영 비용까지 고려하는 것이
-                      설계의 출발점임을 이 프로젝트를 통해 확인했습니다.</span>
+                                <span>아무리 프롬프트 엔지니어링을 반복해도 응답 품질이 오르지 않는 상황에서,
+                      문제의 원인이 프롬프트 내용이 아니라 구조 자체에 있었음을 파악했습니다.
+                      기능을 동작하게 만드는 것과 확장 가능하게 설계하는 것은 다른 문제임을
+                      실감했고, 사전에 확장을 고려한 설계 덕분에 이후 RAG 기능 추가 요청에
+                      재설계 없이 대응할 수 있었습니다. 기능 도입 시 확장 가능성까지 함께
+                      설계하는 것이 실질적인 유지보수 비용을 줄인다는 것을 이 프로젝트에서
+                      직접 확인했습니다.</span>
                             </div>
                         </div>
                     </div>
@@ -1455,38 +1460,48 @@
                             <div class="achievement-row">
                                 <span class="achievement-key situation">상황</span>
                                 <span
-                                >프라이빗 클라우드 환경에서 다중 서버를 운영하면서
-                      서버별로 로그가 분산되어 장애 발생 시 원인 파악에 시간이
-                      걸리고, 서버 접근 권한 관리도 일원화되지 않은
-                      상태였습니다.</span
+                                >기존에는 Scouter로 일부 메트릭만 확인 가능했고, 로그를
+                      보려면 관련 인원이 모든 VM에 root로 접속해 분산된 로그를
+                      직접 확인해야 해서 장애 원인 파악이 느리고 보안·운영
+                      리스크가 있는 상태였습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key action">행동</span>
                                 <span
-                                >Docker 기반으로 ELK
+                                >Scouter 대비 로그·트랜잭션·슬로우쿼리까지 한 곳에서
+                      분석 가능하도록 Docker 기반 ELK
                       Stack(Elasticsearch·Logstash·Kibana)을 구성하고, Fleet +
-                      Elastic Agent로 서버별 로그를 중앙에서 수집하도록 구조를
-                      잡았습니다. 부서 역할에 따라 Admin / Readonly 권한을 분리
-                      적용하고, Elastic APM으로 Java 메일 서비스의 HTTP 요청
-                      흐름과 응답 시간도 수집했습니다.</span
+                      Elastic Agent로 중앙 수집, Admin/Readonly 권한 분리,
+                      Elastic APM으로 Java 메일 서비스의 성능·트랜잭션
+                      모니터링을 구성했습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key result">결과</span>
                                 <span
-                                >한국과학기술정보연구원(KISTI) 프라이빗 클라우드 인프라에
-                      도입 (2025.02~). 여러 서버의 로그를 Kibana 단일 화면에서
-                      조회할 수 있게 되어 장애 원인 파악 속도가 개선되고, 권한
-                      분리로 보안 관리 체계도 정비되었습니다.</span
+                                >한국과학기술정보연구원(KISTI) 프라이빗 클라우드에 도입
+                      (2025.02~).                       VM root 접속을 필수 인원으로 제한하고 그 외 인원은
+                      Kibana를 통해 로그를 조회하도록 전환해 보안을 강화했고, 중앙 집중 조회로 장애·CS 대응
+                      시간을 기존 대비 약 30% 수준으로 단축했습니다.<br><br>
+                      또한 Elastic APM 슬로우쿼리 로그에서 <strong>수신확인 기능의 메일 조회
+                      SQL</strong>이 반복 감지되는 것을 발견했습니다. 보낸 메일 전용
+                      기능임에도 전체 메일함 조회 로직을 그대로 재사용해
+                      <span class="code-inline">is_spam = 0</span>·<span class="code-inline">is_deleted = 0</span>
+                      조건이 남아 있었고, selectivity가 없는 필터로 작동하고
+                      있었습니다. 해당 조건을 제거해 쿼리 성능을 개선했고,
+                      기존에는 각 서버 로그만 봐서는 발견하지 못했던 병목을
+                      ELK 대시보드에서 직접 찾아낼 수 있었습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key lesson">배운 점</span>
-                                <span>다중 서버 환경에서 서버를 직접 오가며 로그를 확인하는 운영 방식의
-                      비효율을 체감하고, 도입 근거와 구성안을 직접 정리해 제안했습니다.
-                      불편함에서 끝내지 않고 문제를 정의하고 해결 방향을 제시하는 것이
-                      개발자의 역할임을 확인했습니다.</span>
+                                <span>다중 서버를 직접 오가며 로그를 보는 방식의 비효율을 체감하고,
+                      도입 근거와 구성안을 직접 정리해 제안했습니다. 모니터링 가시성이
+                      생기자 기존에는 누구도 인지하지 못했던 슬로우쿼리가 보이기 시작했고,
+                      이를 발견해 직접 개선할 수 있었습니다. 문제는 보여야 해결할 수 있다는 것,
+                      그리고 불편함에서 끝내지 않고 해결 방향을 제시하는 것이 개발자의
+                      역할임을 확인했습니다.</span>
                             </div>
                         </div>
                     </div>
@@ -1514,27 +1529,33 @@
                             <div class="achievement-row">
                                 <span class="achievement-key action">행동</span>
                                 <span
-                                >기존 SMS 발송 흐름을 분석하여 공통 발송 로직과 메시지
-                      타입별 처리 로직을 분리하는 구조로 재설계했습니다. 외부
-                      통신사 MMS API 연동, 이미지 파일 검증 및 예외 처리, 엑셀
-                      기반 대량 발송 기능(파일 파싱 → 데이터 검증 → 배치 처리)을
-                      단독으로 담당했습니다.</span
+                                >기존 SMS가 shell curl 기반으로 통신사 API를 호출하고 있어,
+                      통신사 최신 API 문서를 기반으로 <strong>RestTemplate 방식으로
+                      재구현</strong>했습니다. 공통 발송 로직과 타입별 처리 로직을
+                      분리해 재설계하고, 통신사 MMS API 연동·이미지 파일 검증·예외
+                      처리를 단독으로 담당했습니다. 엑셀 대량 발송 시 통신사 1회
+                      요청 수신자 제한을 고려해 청크 단위로 분할하고,
+                      <span class="code-inline">CompletableFuture</span>로 병렬 발송 후
+                      전체 결과를 집계해 결과 페이지에 반환하도록 구현했습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key result">결과</span>
                                 <span
-                                >한국농수산식품유통공사 대상 운영 적용 (2025.06~). 기존
-                      SMS 기능의 안정성을 유지하면서 MMS 기능을 성공적으로
-                      추가했고, 고객사 대량 발송 업무 처리 기반을
-                      마련했습니다.</span
+                                >한국농수산식품유통공사 운영에 적용되었습니다 (2025.06~).
+                      엑셀 기반 대량 발송 도입으로 기존 건별 수동 등록 방식 대비
+                      발송 준비 시간이 크게 단축되었고, SMS 단독 운영에서 MMS까지
+                      발송 가능한 콘텐츠 유형이 확대되었습니다.</span
                                 >
                             </div>
                             <div class="achievement-row">
                                 <span class="achievement-key lesson">배운 점</span>
-                                <span>통신사 API 문서가 불충분한 상황에서 직접 문의하며 연동을 완성한 경험을 통해,
-                      외부 API 연동 시 스펙 출처·제약 사항·참고 링크를 코드에 명시적으로
-                      남겨 인수인계를 고려하는 문서화 원칙을 세우게 되었습니다.</span>
+                                <span>shell curl로 작성된 레거시 SMS 코드를 RestTemplate으로 재구현하면서,
+                      기존 코드가 왜 그렇게 작성됐는지 파악하는 것부터 시작해야 했습니다.
+                      통신사 API의 수신자 제한이라는 외부 제약을 설계에 반영해 청크
+                      분할·병렬 처리 구조로 대응했고, API 문서가 불충분한 상황에서 직접
+                      문의하며 완성한 경험을 통해 스펙 출처·제약·참고 링크를 코드에
+                      명시하는 문서화 원칙을 세우게 되었습니다.</span>
                             </div>
                         </div>
                     </div>
@@ -1583,11 +1604,8 @@
             <div class="skill-list">
                 <span class="skill-tag primary">Spring Boot 3.5</span>
                 <span class="skill-tag primary">Java 21</span>
-                <span class="skill-tag primary">Virtual Thread</span>
                 <span class="skill-tag">Spring AI 1.1.2</span>
                 <span class="skill-tag">Spring Data JPA</span>
-                <span class="skill-tag">Project Reactor</span>
-                <span class="skill-tag">Lombok</span>
             </div>
         </div>
 
@@ -1602,7 +1620,6 @@
                 <span class="skill-tag">Spring AI ChatClient</span>
                 <span class="skill-tag">Embedding (qwen3)</span>
                 <span class="skill-tag">SSE Streaming</span>
-                <span class="skill-tag">Apache Tika</span>
             </div>
         </div>
 
@@ -1613,9 +1630,8 @@
             <div class="skill-list">
                 <span class="skill-tag primary">PostgreSQL</span>
                 <span class="skill-tag primary">Redis</span>
-                <span class="skill-tag">pgvector (HNSW)</span>
+                <span class="skill-tag">pgvector</span>
                 <span class="skill-tag">JDBC</span>
-                <span class="skill-tag">L1/L2 Cache</span>
             </div>
         </div>
 
@@ -1628,22 +1644,7 @@
                 <span class="skill-tag primary">Langfuse</span>
                 <span class="skill-tag">OTLP</span>
                 <span class="skill-tag">Micrometer</span>
-                <span class="skill-tag">Distributed Tracing</span>
                 <span class="skill-tag">Spring Actuator</span>
-            </div>
-        </div>
-
-        <div class="skill-category">
-            <div class="skill-category-title">
-                <span class="skill-icon">🏗️</span> Architecture / Design
-            </div>
-            <div class="skill-list">
-                <span class="skill-tag primary">Vertical Slice</span>
-                <span class="skill-tag primary">Strategy Pattern</span>
-                <span class="skill-tag primary">Facade Pattern</span>
-                <span class="skill-tag">Factory Pattern</span>
-                <span class="skill-tag">SOLID 원칙</span>
-                <span class="skill-tag">Idempotency</span>
             </div>
         </div>
 
@@ -2691,10 +2692,10 @@
 
         <div class="project-problem">
             <strong>🎯 목적 :</strong>
-            백엔드 AI Assistant API와 연동하는 <strong>풀스택 경험</strong> 확보.
-            외부 라이브러리 최소화(axios 없이 Fetch API 직접, Pinia 없이
-            Composables 패턴)로 프레임워크에 의존하지 않는
-            <strong>근본적인 웹 개발 역량</strong>을 증명합니다.
+            백엔드 AI Assistant API와 연동하는 Vue 3 프론트엔드를 단독으로 구현했습니다.
+            POST 기반 SSE 스트리밍 수신을 위해 <span class="code-inline">EventSource</span> 대신
+            Fetch API + <span class="code-inline">ReadableStream</span>을 직접 사용했고,
+            Pinia 없이 Composables 패턴으로 상태를 관리했습니다.
         </div>
 
         <div class="fe-features">
@@ -2780,19 +2781,13 @@
                 <div class="accordion-body">
                     <div class="adr-grid">
                         <span class="adr-key">결정</span>
-                        <span class="adr-value"
-                        >모든 API 호출을
-                  <span class="code-inline">useApi.ts</span> 단일 진입점으로
-                  집중, 내부에서 Fetch API 직접 사용</span
-                        >
+                        <span class="adr-value">모든 API 호출을 <span class="code-inline">useApi.ts</span> 단일 진입점으로 집중, 내부에서 Fetch API 직접 사용</span>
                         <span class="adr-key">근거</span>
-                        <span class="adr-value"
-                        >① SSE 스트리밍은 axios로 처리 불가 —
-                  <span class="code-inline">response.body.getReader()</span>가
-                  필요<br/>② 현대 브라우저에서 Fetch가 충분히 강력<br/>③ 번들
-                  크기 감소 및 외부 의존성 최소화. 재시도 로직(MAX_RETRIES=3,
-                  지수 백오프)은 직접 구현</span
-                        >
+                        <span class="adr-value">
+                            ① <strong>EventSource 사용 불가</strong> — 브라우저 내장 SSE 클라이언트인 <span class="code-inline">EventSource</span>는 GET 요청만 지원합니다. 이 프로젝트는 <span class="code-inline">/api/v1/ai/conv</span>에 POST로 메시지를 전송하면서 SSE 스트림을 응답으로 받는 구조라 사용이 불가능했습니다.<br/><br/>
+                            ② <strong>axios의 브라우저 스트리밍 한계</strong> — axios는 브라우저 환경에서 내부적으로 XHR을 사용하는데, XHR은 <span class="code-inline">response.body.getReader()</span>를 지원하지 않습니다. XHR의 <span class="code-inline">onDownloadProgress</span>로 일부 구현이 가능하긴 하지만 SSE 청크 단위 파싱에는 훨씬 번거롭고 불안정합니다.<br/><br/>
+                            ③ <strong>fetch + ReadableStream이 표준 방식</strong> — POST 기반 SSE 구현은 <span class="code-inline">fetch → response.body.getReader() → reader.read()</span> 루프가 현재 브라우저 표준입니다. <span class="code-inline">conversation_created</span>, <span class="code-inline">stream_complete</span>, <span class="code-inline">error</span> 등 커스텀 SSE 이벤트를 버퍼로 파싱하는 것도 이 방식으로만 가능합니다.
+                        </span>
                     </div>
                 </div>
             </div>
@@ -2808,27 +2803,18 @@
                 <div class="accordion-body">
                     <div class="adr-grid">
                         <span class="adr-key">결정</span>
-                        <span class="adr-value"
-                        >전역 상태 최소화, Vue 3 Composition API의
-                  <span class="code-inline">ref</span>/<span class="code-inline"
-                            >computed</span
-                            >만 사용. 필요한 경우
-                  <span class="code-inline">provide/inject</span>로 전달</span
-                        >
+                        <span class="adr-value">전역 스토어 없이 Vue 3 Composition API의 <span class="code-inline">ref</span> / <span class="code-inline">computed</span>를 Composable 패턴으로 조합해 상태 관리</span>
                         <span class="adr-key">근거</span>
-                        <span class="adr-value"
-                        >① 채팅 앱 특성상 전역 공유 상태가 많지 않아 Pinia 도입 대비
-                  복잡도 증가<br/>② 각 composable이 독립적인 관심사를 캡슐화 →
-                  테스트 용이성<br/>③
-                  <span class="code-inline">App.vue</span>에서
-                  <span class="code-inline">auth</span> provide →
-                  <span class="code-inline">ChatPage</span>에서 inject로
-                  최소한의 전역 공유</span
-                        >
+                        <span class="adr-value">
+                            ① <strong>useChatState 호출부가 ChatPage.vue 단 하나</strong> — <span class="code-inline">ref()</span>는 호출마다 새 인스턴스를 생성하므로, 한 곳에서만 호출하고 자식 컴포넌트에 props로 내려주는 구조라면 전역 공유가 불필요합니다.<br/><br/>
+                            ② <strong>라우트 간 공유 상태 없음</strong> — 각 페이지가 독립적으로 동작하며, 범용적인 <span class="code-inline">useAuth</span> · <span class="code-inline">useTheme</span> 정도만 <span class="code-inline">App.vue</span>에서 사용합니다. Pinia가 필요한 순간은 "두 컴포넌트가 공통 부모 없이 같은 상태를 공유해야 할 때"인데 그 상황이 발생하지 않았습니다.<br/><br/>
+                            ③ <strong>onMounted 패턴과 Pinia의 구조적 불일치</strong> — <span class="code-inline">useChatState</span> 내부에서 <span class="code-inline">onMounted</span>를 직접 호출하고 있습니다. Pinia 스토어는 컴포넌트 라이프사이클 훅을 사용할 수 없어 이 패턴 자체가 Pinia와 맞지 않습니다.
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </section>
 
