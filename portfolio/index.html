@@ -293,10 +293,23 @@
       }
 
       /* ===== ABOUT ===== */
+      .about-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+      }
+
+      .about-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+        width: 100%;
+      }
+
       .about-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 4rem;
         align-items: start;
       }
 
@@ -310,21 +323,18 @@
         color: var(--text);
       }
 
-      .about-stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-      }
-
       .stat-card {
         background: var(--bg-2);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 1.5rem;
-        text-align: center;
+        text-align: left;
         transition:
           border-color 0.2s,
           transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
 
       .stat-card:hover {
@@ -333,7 +343,7 @@
       }
 
       .stat-number {
-        font-size: 2rem;
+        font-size: 1.1rem;
         font-weight: 800;
         background: linear-gradient(135deg, var(--accent), var(--accent-2));
         -webkit-background-clip: text;
@@ -342,13 +352,12 @@
       }
 
       .stat-label {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         color: var(--text-muted);
-        margin-top: 0.25rem;
+        line-height: 1.6;
       }
 
       .timeline {
-        margin-top: 2rem;
         border-left: 2px solid var(--border);
         padding-left: 1.5rem;
       }
@@ -388,9 +397,37 @@
       }
 
       /* ===== SKILLS ===== */
+      .skill-group {
+        margin-bottom: 3rem;
+      }
+
+      .skill-group:last-of-type {
+        margin-bottom: 0;
+      }
+
+      .skill-group-below-cards {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .skill-group-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.35rem;
+        letter-spacing: -0.3px;
+      }
+
+      .skill-group-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1.25rem;
+      }
+
       .skills-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
       }
 
@@ -427,7 +464,7 @@
       .skill-tag {
         padding: 0.3rem 0.75rem;
         border-radius: 100px;
-        font-size: 0.78rem;
+        font-size: 0.85rem;
         font-weight: 500;
         border: 1px solid var(--border);
         background: var(--bg-3);
@@ -481,7 +518,7 @@
       }
 
       .project-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         color: var(--text-muted);
       }
 
@@ -494,7 +531,7 @@
       .tag {
         padding: 0.25rem 0.7rem;
         border-radius: 6px;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-weight: 600;
       }
 
@@ -525,7 +562,7 @@
         border-radius: 0 8px 8px 0;
         padding: 1rem 1.25rem;
         margin-bottom: 1.5rem;
-        font-size: 0.9rem;
+        font-size: 1rem;
         color: var(--text-muted);
       }
 
@@ -535,7 +572,7 @@
 
       .project-features {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
         margin-bottom: 2rem;
       }
@@ -665,9 +702,9 @@
       .accordion-body {
         display: none;
         padding: 1.25rem;
-        font-size: 0.88rem;
+        font-size: 1rem;
         color: var(--text-muted);
-        line-height: 1.7;
+        line-height: 1.8;
         border-top: 1px solid var(--border);
         background: var(--bg-2);
       }
@@ -691,7 +728,7 @@
 
       .adr-value {
         color: var(--text-muted);
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         line-height: 1.9;
       }
 
@@ -749,7 +786,7 @@
       }
 
       .contact-info-val {
-        font-size: 0.82rem;
+        font-size: 0.88rem;
         color: var(--accent);
         margin-top: 0.15rem;
       }
@@ -983,7 +1020,7 @@
 
       .fe-features {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0.75rem;
         margin-bottom: 1.5rem;
       }
@@ -1037,6 +1074,232 @@
         height: 100%;
       }
 
+      /* ===== PROJECT OVERVIEW (목적/이유/결과 3행) ===== */
+      .project-overview {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .overview-item {
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        border-left: 3px solid;
+        background: var(--bg-3);
+        font-size: 1rem;
+        line-height: 1.8;
+        color: var(--text-muted);
+      }
+
+      .overview-item strong {
+        color: var(--text);
+      }
+
+      .overview-label {
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+      }
+
+      .overview-goal {
+        border-color: var(--yellow);
+      }
+      .overview-goal .overview-label {
+        color: var(--yellow);
+      }
+      .overview-decision {
+        border-color: var(--accent);
+      }
+      .overview-decision .overview-label {
+        color: var(--accent);
+      }
+      .overview-result {
+        border-color: var(--green);
+      }
+      .overview-result .overview-label {
+        color: var(--green);
+      }
+
+      /* ===== SCREENSHOTS ===== */
+      .screenshots-section {
+        margin: 2rem 0;
+      }
+
+      .screenshots-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+      }
+
+      .screenshots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .screenshot-item {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg-3);
+        transition: border-color 0.2s;
+      }
+
+      .screenshot-item:hover {
+        border-color: var(--accent);
+      }
+
+      .screenshot-img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        display: block;
+      }
+
+      .screenshot-placeholder {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-2);
+        border-bottom: 1px dashed var(--border);
+        gap: 0.5rem;
+        color: var(--text-muted);
+        cursor: default;
+      }
+
+      .screenshot-placeholder-icon {
+        font-size: 2rem;
+        opacity: 0.35;
+      }
+
+      .screenshot-placeholder-text {
+        font-size: 0.75rem;
+        opacity: 0.45;
+      }
+
+      .screenshot-caption {
+        padding: 0.85rem 1rem;
+      }
+
+      .screenshot-caption strong {
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 0.3rem;
+        color: var(--text);
+      }
+
+      .screenshot-caption p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      .screenshot-click-wrap {
+        position: relative;
+        cursor: pointer;
+        display: block;
+        overflow: hidden;
+      }
+
+      .screenshot-click-wrap::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0);
+        transition: background 0.2s;
+      }
+
+      .screenshot-click-wrap:hover::after {
+        background: rgba(0, 0, 0, 0.4);
+      }
+
+      .screenshot-hover-label {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .screenshot-click-wrap:hover .screenshot-hover-label {
+        opacity: 1;
+      }
+
+      /* ===== LIGHTBOX ===== */
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.9);
+        cursor: pointer;
+      }
+
+      .lightbox.is-open {
+        display: flex;
+      }
+
+      .lightbox-content {
+        position: relative;
+        max-width: 95vw;
+        max-height: 95vh;
+        cursor: default;
+      }
+
+      .lightbox-content img {
+        max-width: 100%;
+        max-height: 95vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .lightbox-close {
+        position: absolute;
+        top: -2.5rem;
+        right: 0;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        background: var(--bg-3);
+        color: var(--text);
+        font-size: 1.25rem;
+        line-height: 1;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+
+      .lightbox-close:hover {
+        background: var(--border);
+      }
+
       /* ===== RESPONSIVE ===== */
       @media (max-width: 768px) {
         .about-grid {
@@ -1053,6 +1316,9 @@
         }
         .hero-name {
           letter-spacing: -1px;
+        }
+        .project-features {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -1197,6 +1463,11 @@
         #skills {
           page-break-before: auto;
         }
+
+        .skill-group {
+          break-inside: avoid;
+          margin-bottom: 2rem;
+        }
       }
     </style>
   </head>
@@ -1220,7 +1491,7 @@
       <div class="hero-content">
         <div class="hero-badge">
           <span class="badge-dot"></span>
-          Backend Developer · Cloud · AI Integration
+          레거시 개선 · 구조 설계 · AI 통합
         </div>
 
         <h1 class="hero-name">
@@ -1270,32 +1541,73 @@
     <!-- ABOUT -->
     <section id="about">
       <div class="section-label">About Me</div>
-      <h2 class="section-title">클라우드 개발, 그리고 AI로의 확장</h2>
+      <h2 class="section-title">운영 환경의 문제를 구조 개선으로 해결합니다</h2>
       <p class="section-desc">
-        이메일 서비스 인프라에서 쌓은 클라우드·백엔드 경험을 바탕으로, 실제
-        서비스 운영 노하우를 AI 시스템에 녹여냈습니다.
+        레거시를 이해하고, 단순 수정이 아닌 구조에서 원인을 찾아 운영 가능한
+        형태로 개선하는 Java 백엔드 개발자입니다.
       </p>
 
-      <div class="about-grid fade-in">
-        <div class="about-text">
-          <p>
-            <strong>이메일 서비스 회사</strong>에서 약
-            <strong>2년간</strong> 백엔드 개발 및 클라우드 인프라를
-            담당했습니다. 대규모 이메일 트래픽을 처리하며
-            <strong>안정성, 성능, 장애 복원력</strong>이 얼마나 중요한지 몸소
-            배웠습니다.
-          </p>
-          <p>
-            이 경험을 토대로 단순한 AI 래퍼를 넘어,
-            <strong>프로덕션 수준의 신뢰성</strong>을 갖춘 AI 어시스턴트
-            플랫폼을 직접 설계하고 구현했습니다. Idempotency 보장, SSE 스트리밍
-            복원력, 분산 추적까지 갖춘 시스템을 혼자 설계·구현한 것이 이번
-            프로젝트의 핵심입니다.
-          </p>
-          <p>
-            새로운 환경에서 <strong>AI 시대의 백엔드 개발자</strong>로서 더 큰
-            임팩트를 만들고 싶습니다.
-          </p>
+      <div class="about-container fade-in">
+        <!-- 상단: 강점 카드 4개 -->
+        <div class="about-stats">
+          <div class="stat-card">
+            <div class="stat-number">레거시 해석</div>
+            <div class="stat-label">
+              기존 구조를 빠르게 파악하고, 왜 그렇게 작성됐는지부터 이해합니다.
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">구조 개선</div>
+            <div class="stat-label">
+              단순 수정에 그치지 않고, 유지보수성과 확장성을 높이는 방향으로
+              개선합니다.
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">운영 가시성</div>
+            <div class="stat-label">
+              흩어진 로그와 병목을 관측 가능한 형태로 바꾸고 실제 개선까지
+              연결합니다.
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">AI 통합</div>
+            <div class="stat-label">
+              새 기술을 무리하게 도입하기보다, 기존 서비스 안에 운영 가능한
+              구조로 녹여냅니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- 하단: 좌(텍스트) / 우(타임라인) -->
+        <div class="about-grid">
+          <div class="about-text">
+            <p>
+              저는
+              <strong
+                >레거시 구조를 이해하고, 운영 환경의 문제를 구조 개선으로
+                해결하는 Java 백엔드 개발자</strong
+              >입니다. 운영 중인 서비스에서는 작은 버그 하나도 사용자 경험과
+              운영 비용에 직결된다고 생각하기 때문에, 단순 수정에 그치지 않고
+              원인을 구조와 흐름에서 찾으려 노력해 왔습니다.
+            </p>
+            <p>
+              <strong>크리니티</strong>에서 공공·클라우드 메일 서비스를
+              개발·운영하며 고객사 기능 개발, 운영 이슈 대응, 모니터링 체계
+              구축, AI 기능 통합 PoC 설계 등을 경험했습니다. 이 과정에서
+              <strong
+                >AI 호출 구조 개선, 통합 모니터링 구축, SMS/MMS 구조
+                재설계</strong
+              >를 통해 서비스를 더 유지보수하기 쉽고 확장 가능한 방향으로
+              개선하는 데 집중했습니다.
+            </p>
+            <p>
+              저의 강점은
+              <strong>새로운 기술을 무조건 도입하는 것이 아니라</strong>, 현재
+              서비스와 조직의 운영 방식에 맞는 현실적인 선택을 하고 이를
+              <strong>운영 가능한 구조로 구현</strong>하는 데 있습니다.
+            </p>
+          </div>
 
           <div class="timeline">
             <div class="timeline-item">
@@ -1310,26 +1622,10 @@
                 이메일 서비스 · 클라우드 인프라
               </div>
             </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="about-stats">
-            <div class="stat-card">
-              <div class="stat-number">2Y</div>
-              <div class="stat-label">Years Experience</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-number">3</div>
-              <div class="stat-label">Delivered Projects</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-number">2</div>
-              <div class="stat-label">Certifications</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-number">15+</div>
-              <div class="stat-label">Tech Stack</div>
+            <div class="timeline-item">
+              <div class="timeline-period">2023.06 — 2023.12 | 엔코아</div>
+              <div class="timeline-role">Java 백엔드 개발자 과정 수료</div>
+              <div class="timeline-company">교육</div>
             </div>
           </div>
         </div>
@@ -1340,9 +1636,6 @@
     <section id="experience">
       <div class="section-label">Work Experience</div>
       <h2 class="section-title">경력 사항</h2>
-      <p class="section-desc">
-        이메일 서비스 회사에서 쌓은 클라우드·백엔드 경험
-      </p>
 
       <div class="exp-card fade-in">
         <div class="exp-header">
@@ -1359,23 +1652,17 @@
             <div class="exp-category-label">담당 업무</div>
             <ul class="exp-bullets">
               <li class="exp-li">
-                Spring Boot 3.x / Java 21 기반 차세대 메일 서비스 백엔드 개발
-                참여
+                공공·클라우드 메일 서비스의 기능 유지보수 및 운영 안정화
               </li>
               <li class="exp-li">
-                ELK Stack 기반 중앙 집중형 모니터링 시스템 구축 및 운영 (KISTI
-                프라이빗 클라우드 환경)
+                고객사 맞춤 기능 개발 및 JavaScript·JSP 기반 서비스 구현
+              </li>
+              <li class="exp-li">Spring AI 기반 AI 기능 통합 PoC 설계·개발</li>
+              <li class="exp-li">
+                검색 기능 개선 및 Elasticsearch 기반 성능 최적화 참여
               </li>
               <li class="exp-li">
-                JavaScript / JSP 활용 풀스택 개발 및 고객사 맞춤 기능 구현,
-                CI/CD 자동화 배포 관리
-              </li>
-              <li class="exp-li">
-                KT Cloud / NCP 멀티 클라우드 환경에서 서비스 운영 및 배포 관리
-              </li>
-              <li class="exp-li">
-                Spring AI 기반 공공 메일 서비스 AI 기능 PoC 설계·구현 (RAG
-                파이프라인, 에이전트 구조)
+                ELK·Fleet·APM 기반 통합 모니터링 환경 구축 및 운영
               </li>
             </ul>
           </div>
@@ -1501,9 +1788,12 @@
                         >is_deleted = 0</span
                       >
                       조건이 남아 있어도 없어도 결과가 같은 의미 없는 필터로
-                      작동하고 있었습니다. 해당 조건을 제거해 쿼리 성능을 개선했고,
-                      기존에는 각 서버 로그만 봐서는 발견하지 못했던 병목을 ELK
-                      대시보드에서 직접 찾아낼 수 있었습니다.</span
+                      작동하고 있었습니다. 해당 조건을 제거해 쿼리 성능을
+                      개선했고, 기존에는 각 서버 로그만 봐서는 발견하지 못했던
+                      병목을 ELK 대시보드에서 직접 찾아낼 수 있었습니다.<br /><br />
+                      이후 해당 구축 내용과 개선 사례를 사내 발표로 전사에
+                      공유해, 단순한 개인 구현을 넘어 조직 차원의 운영 개선
+                      사례로 확산시켰습니다.</span
                     >
                   </div>
                   <div class="achievement-row">
@@ -1526,6 +1816,152 @@
               <button class="accordion-header" onclick="toggleAccordion(this)">
                 <span class="exp-achievement-title">
                   <span class="achievement-num">03</span>
+                  레거시 검색 구조 기반 결과 내 재검색 기능 구현
+                </span>
+                <span class="accordion-arrow">▼</span>
+              </button>
+              <div class="accordion-body">
+                <div class="achievement-body">
+                  <div class="achievement-row">
+                    <span class="achievement-key situation">상황</span>
+                    <span
+                      >기존 검색 시스템은 일반 검색과 상세 검색 모두 1회성
+                      조회만 가능해, 사용자가 검색 결과를 단계적으로 좁혀가는
+                      흐름을 지원하지 못했습니다. 메일이 수천 건 이상 누적된
+                      고객사 업무 환경에서는 원하는 메일을 찾기 위해 검색어를
+                      바꿔가며 반복 조회해야 하는 상황이 빈번했고, 이에 대한
+                      불편 피드백이 내부적으로 전달되고 있었습니다. 결과 내
+                      재검색은 여러 서비스에서 기본적으로 제공되는 기능이지만,
+                      당시 사내 검색 엔진은 과거 Lucene 기반 코드를 포크해 온
+                      구조를 그대로 사용하고 있어 해당 기능을 직접 지원하지
+                      않았고, 검색 영역 자체도 쉽게 수정하기 어려운
+                      상태였습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key action">행동</span>
+                    <span
+                      >처음에는 검색 조건을 단순히 AND로 누적하면 결과 내
+                      재검색이 가능할 것으로 예상했지만, 실제로는 원하는 형태로
+                      동작하지 않았습니다. 그래서 기존 검색 코드를 다시 분석한
+                      뒤, 검색 엔진 자체를 수정하는 대신 초기 검색 결과 집합과
+                      재검색 결과 집합의 교집합만 최종 조회 대상으로 반영하는
+                      방식으로 로직을 설계했습니다. 구현 시에는 1차 검색 결과의
+                      mailUid 목록과 검색 조건을 기준으로, 결과 내 재검색 요청이
+                      들어오면 백엔드에서 동일한 검색 로직으로 다시 mailUid
+                      목록을 조회하고, 두 결과 집합의 교집합만 남긴 뒤 해당
+                      결과만 DB 조회해 반환하도록 처리했습니다. 이를 통해 검색
+                      엔진 구조를 크게 변경하지 않고도 결과 내 재검색 기능을
+                      구현할 수 있도록 했습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key result">결과</span>
+                    <span
+                      >기존에는 검색 결과가 많아도 이를 다시 좁혀볼 수 없어,
+                      사용자가 검색어를 반복해서 다시 입력하며 원하는 메일을
+                      찾아야 했습니다. 결과 내 재검색 기능을 도입하면서 현재
+                      검색 결과를 기준으로 최대 5회까지 단계적으로 범위를 정제할
+                      수 있게 되었고, 이를 통해 메일이 많이 누적되는 업무용
+                      환경에서도 원하는 메일에 더 빠르게 도달할 수 있는 검색
+                      흐름을 제공했습니다. 또한 검색 엔진 자체를 수정하지 않고도
+                      기존 구조 안에서 실사용 가치가 높은 기능 확장을
+                      구현했습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key lesson">배운 점</span>
+                    <span
+                      >당시 구조상 검색 엔진 레벨 수정이나 서버 세션 기반 상태
+                      관리, Redis 같은 별도 저장소 도입은 현실적으로 어려운
+                      상황이었습니다. 그래서 이 구현은 가장 이상적인
+                      구조라기보다, 강한 레거시 제약 안에서 변경 범위를
+                      최소화하면서도 요구사항을 충족시키기 위한 현실적인 해법에
+                      가까웠습니다. 이 경험을 통해 레거시 환경에서는 완전히
+                      새로운 구조를 도입하는 것보다, 기존 동작을 정확히 이해하고
+                      손댈 수 있는 범위 안에서 기능을 확장하는 판단도 중요하다는
+                      점을 배웠습니다.</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="toggleAccordion(this)">
+                <span class="exp-achievement-title">
+                  <span class="achievement-num">04</span>
+                  레거시 공통 히스토리 처리 정상화 및 네비게이션 상태 개선
+                </span>
+                <span class="accordion-arrow">▼</span>
+              </button>
+              <div class="accordion-body">
+                <div class="achievement-body">
+                  <div class="achievement-row">
+                    <span class="achievement-key situation">상황</span>
+                    <span
+                      >기존 메일 서비스는 브라우저 기본 뒤로가기 동작을 그대로
+                      사용하지 않고, 사내 공통 JavaScript 패키지에서 별도로
+                      히스토리 이벤트를 처리하는 구조였습니다. 이 때문에 메일
+                      상세 화면에서 목록으로 돌아온 뒤 다시 뒤로가기를 하면 직전
+                      메일 화면으로 복귀하지 못하고, 목록이 다시 렌더링되며
+                      깜빡이는 비직관적인 흐름이 발생했습니다. 또한 이 과정에서
+                      좌측 메일함 사이드바의 하이라이트 상태가 실제 화면과
+                      어긋나는 문제도 함께 발생해, 사용자 입장에서 현재 위치를
+                      혼동하기 쉬운 상태였습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key action">행동</span>
+                    <span
+                      >해당 문제는 서비스 전반에 영향을 줄 수 있는 공통 히스토리
+                      처리 영역이었기 때문에, 화면 단위 수정이 아니라 사내
+                      패키지의 히스토리 처리 로직부터 다시 분석했습니다. 이후
+                      메일 상세, 메일함 목록, 다른 메일함 이동 과정에서 뒤로가기
+                      시점마다 어떤 화면 상태와 하이라이트 상태가 유지되어야
+                      하는지를 기준으로 흐름을 재정의하고, 히스토리 처리와 UI
+                      상태 동기화 로직을 함께 수정했습니다. 이를 통해 예를 들어
+                      A 메일 → 받은메일함 → B 메일 → 휴지통처럼 이동한 뒤에도,
+                      뒤로가기를 하면 사용자가 기대하는 순서대로 이전 화면과
+                      메일함 상태가 일관되게 복원되도록 정상화했습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key result">결과</span>
+                    <span
+                      >기존에는 뒤로가기 시 직전 화면으로 복귀하지 못하고 목록이
+                      다시 렌더링되거나, 메일함 하이라이트가 실제 화면과
+                      불일치하는 문제가 있었지만, 수정 이후에는 메일
+                      상세/목록/메일함 이동 흐름이 사용자가 기대하는 방식으로
+                      일관되게 동작하도록 개선했습니다. 이를 통해 기본
+                      네비게이션 동작에서 발생하던 혼란을 줄였고, 서비스 전반의
+                      사용 흐름을 더 자연스럽고 예측 가능하게 만들 수
+                      있었습니다. 개선 이후 뒤로가기 관련 문의도 0건으로 줄어,
+                      반복적으로 발생하던 사용자 혼란을 해소할 수
+                      있었습니다.</span
+                    >
+                  </div>
+                  <div class="achievement-row">
+                    <span class="achievement-key lesson">배운 점</span>
+                    <span
+                      >이 경험을 통해 레거시 환경에서의 작은 사용성 문제도
+                      실제로는 공통 패키지와 전역 상태 처리 방식에 깊게 연결되어
+                      있을 수 있다는 점을 배웠습니다. 또한 겉으로는 단순한
+                      뒤로가기 이슈처럼 보여도, 히스토리 처리와 화면 상태
+                      동기화를 함께 봐야 근본적인 해결이 가능하다는 점을
+                      체감했습니다. 이후에는 UI 문제를 볼 때도 화면 단위
+                      현상만이 아니라, 그 뒤에 있는 공통 흐름과 상태 관리
+                      구조까지 함께 확인하는 관점을 갖게 되었습니다.</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="toggleAccordion(this)">
+                <span class="exp-achievement-title">
+                  <span class="achievement-num">05</span>
                   고객사 SMS/MMS 외부 API 연동 개발
                 </span>
                 <span class="accordion-arrow">▼</span>
@@ -1613,88 +2049,75 @@
       <div class="section-label">Tech Stack</div>
       <h2 class="section-title">기술 스택</h2>
       <p class="section-desc">
-        클라우드 인프라 경험과 AI 시스템 개발을 아우르는 풀스택 백엔드 역량
+        실무 경험에서 사용한 기술입니다. 개인 프로젝트 스택은 각 프로젝트 카드
+        하단에서 확인할 수 있습니다.
       </p>
 
-      <div class="skills-grid fade-in">
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">☕</span> Backend
+      <!-- 실무 경험 스택 (크리니티 등) -->
+      <div class="skill-group fade-in">
+        <h3 class="skill-group-title">실무 경험 스택</h3>
+        <p class="skill-group-desc">
+          고객사 기능 개발, 운영 대응, 모니터링·AI PoC 등에서 사용한 기술
+        </p>
+        <div class="skills-grid">
+          <div class="skill-category">
+            <div class="skill-category-title">
+              <span class="skill-icon">☕</span> Backend
+            </div>
+            <div class="skill-list">
+              <span class="skill-tag primary">Java</span>
+              <span class="skill-tag primary">Spring Framework</span>
+              <span class="skill-tag primary">Spring Boot 3.x</span>
+              <span class="skill-tag">JSP</span>
+              <span class="skill-tag">JavaScript</span>
+            </div>
           </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">Spring Boot 3.5</span>
-            <span class="skill-tag primary">Java 21</span>
-            <span class="skill-tag">Spring AI 1.1.2</span>
-            <span class="skill-tag">Spring Data JPA</span>
-          </div>
-        </div>
 
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">🤖</span> AI / LLM
+          <div class="skill-category">
+            <div class="skill-category-title">
+              <span class="skill-icon">🗄️</span> DB · 메시징
+            </div>
+            <div class="skill-list">
+              <span class="skill-tag primary">MySQL</span>
+              <span class="skill-tag">Kafka</span>
+              <span class="skill-tag">Redis</span>
+            </div>
           </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">Ollama</span>
-            <span class="skill-tag primary">RAG (Tool-based)</span>
-            <span class="skill-tag primary">pgvector</span>
-            <span class="skill-tag">Spring AI ChatClient</span>
-            <span class="skill-tag">Embedding (qwen3)</span>
-            <span class="skill-tag">SSE Streaming</span>
-          </div>
-        </div>
 
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">🗄️</span> Data Store
+          <div class="skill-category">
+            <div class="skill-category-title">
+              <span class="skill-icon">📊</span> 모니터링 · 로그
+            </div>
+            <div class="skill-list">
+              <span class="skill-tag primary">ELK Stack</span>
+              <span class="skill-tag">Elasticsearch</span>
+              <span class="skill-tag">Elastic APM</span>
+              <span class="skill-tag">Fleet · Agent</span>
+            </div>
           </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">PostgreSQL</span>
-            <span class="skill-tag primary">Redis</span>
-            <span class="skill-tag">pgvector</span>
-            <span class="skill-tag">JDBC</span>
-          </div>
-        </div>
 
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">🔭</span> Observability
+          <div class="skill-category">
+            <div class="skill-category-title">
+              <span class="skill-icon">☁️</span> 클라우드 · 인프라
+            </div>
+            <div class="skill-list">
+              <span class="skill-tag primary">KT Cloud</span>
+              <span class="skill-tag primary">NCP</span>
+              <span class="skill-tag">Docker</span>
+              <span class="skill-tag">Jenkins</span>
+              <span class="skill-tag">Git</span>
+            </div>
           </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">OpenTelemetry 2.17</span>
-            <span class="skill-tag primary">Langfuse</span>
-            <span class="skill-tag">OTLP</span>
-            <span class="skill-tag">Micrometer</span>
-            <span class="skill-tag">Spring Actuator</span>
-          </div>
-        </div>
 
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">☁️</span> Cloud / Infra
-          </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">Docker</span>
-            <span class="skill-tag">Docker Compose</span>
-            <span class="skill-tag">Gradle</span>
-            <span class="skill-tag">Git</span>
-            <span class="skill-tag">On-Premise LLM</span>
-          </div>
-        </div>
-
-        <div class="skill-category">
-          <div class="skill-category-title">
-            <span class="skill-icon">🖼️</span> Frontend
-          </div>
-          <div class="skill-list">
-            <span class="skill-tag primary">Vue 3</span>
-            <span class="skill-tag primary">TypeScript</span>
-            <span class="skill-tag primary">Tailwind CSS 4</span>
-            <span class="skill-tag">Vite 7</span>
-            <span class="skill-tag">Shadcn-vue</span>
-            <span class="skill-tag">Composition API</span>
-            <span class="skill-tag">SSE (ReadableStream)</span>
-            <span class="skill-tag">markdown-it</span>
-            <span class="skill-tag">React</span>
+          <div class="skill-category">
+            <div class="skill-category-title">
+              <span class="skill-icon">🤖</span> AI (실무 PoC)
+            </div>
+            <div class="skill-list">
+              <span class="skill-tag primary">Spring AI</span>
+              <span class="skill-tag">RAG</span>
+              <span class="skill-tag">Langfuse</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1711,10 +2134,10 @@
       <div class="project-card fade-in">
         <div class="project-header">
           <div class="project-title-group">
-            <h3>🤖 AI Assistant</h3>
+            <h3>AI Assistant</h3>
             <p class="project-subtitle">
-              Spring Boot 3.5 · Java 21 · Ollama · pgvector · Redis ·
-              OpenTelemetry
+              Java/Spring 기반으로 운영 가능한 AI 어시스턴트 백엔드 구조를
+              검증한 프로젝트
             </p>
           </div>
           <div class="project-tags">
@@ -1725,14 +2148,41 @@
           </div>
         </div>
 
-        <div class="project-problem">
-          <strong>🔍 문제의식 :</strong>
-          클라우드 LLM API(OpenAI 등)는 <strong>높은 비용</strong>과
-          <strong>민감한 데이터의 외부 전송</strong>이라는 한계가 있습니다. 이를
-          온프레미스 Ollama LLM으로 해결하되, 단순한 채팅 래퍼가 아닌
-          <strong>프로덕션 수준의 신뢰성</strong>
-          (Idempotency, 스트리밍 복원력, 분산 추적)을 갖춘 플랫폼을
-          설계했습니다.
+        <div class="project-overview">
+          <div class="overview-item overview-goal">
+            <div class="overview-label">프로젝트 목적</div>
+            단순 챗봇 데모가 아니라,
+            <strong
+              >AI 기능을 기존 Java/Spring 백엔드 서비스 안에 넣었을 때 필요한
+              구조를 검증</strong
+            >하는 것이 목적입니다. RAG, SSE 스트리밍, 대화 메모리, 관측성,
+            프롬프트 관리까지 포함해 실제로 운영 가능한 AI 백엔드 구조를 목표로
+            설계했습니다.
+          </div>
+          <div class="overview-item overview-decision">
+            <div class="overview-label">
+              왜 Spring AI인가 (Python이 아닌 이유)
+            </div>
+            Python 생태계(LangChain 등)가 더 성숙하다는 점은 알고 있었습니다.
+            하지만 이 프로젝트의 목적은
+            <strong>모델 실험이 아니라 서비스 통합</strong>이었습니다. 메모리
+            관리, 스트리밍, 관측성, 장애 대응 같은 문제를
+            <strong>Java/Spring 백엔드 개발자 관점</strong>에서, 기존 서비스
+            구조 안에서 풀어보고 싶었습니다.
+          </div>
+          <div class="overview-item overview-result">
+            <div class="overview-label">검증 결과</div>
+            로컬 Ollama와 연동해
+            <strong
+              >RAG · SSE 스트리밍 · 대화 메모리 · Langfuse 추적이 end-to-end로
+              동작</strong
+            >함을 확인했고, Java 백엔드 안에서 운영 가능한 AI 구조를 설계할 수
+            있다는 점을 검증했습니다.
+          </div>
+        </div>
+
+        <div class="screenshots-section">
+          <div class="screenshots-title">핵심 설계 포인트</div>
         </div>
 
         <div class="project-features">
@@ -1741,8 +2191,8 @@
             <div>
               <div class="feature-title">SSE 실시간 스트리밍</div>
               <div class="feature-desc">
-                Reactor Flux 기반 토큰 단위 스트리밍. 연결 끊김 시 Ollama 호출
-                자동 중단 및 재시도(최대 3회, Exponential Backoff)
+                토큰 단위 스트리밍으로 응답 대기 체감을 줄이고, 재시도 구조를
+                적용해 실제 서비스에서의 응답 안정성까지 고려했습니다.
               </div>
             </div>
           </div>
@@ -1751,8 +2201,9 @@
             <div>
               <div class="feature-title">Tool-based RAG</div>
               <div class="feature-desc">
-                AI가 문서 검색 필요 여부를 스스로 판단하여 @Tool 호출. pgvector
-                HNSW + Cosine 유사도 검색
+                프로젝트형 채팅방에서만 벡터 검색 툴이 동작하도록 분리해,
+                불필요한 검색 비용을 줄이고 필요한 경우에만 근거 기반 답변을
+                제공하도록 했습니다.
               </div>
             </div>
           </div>
@@ -1761,9 +2212,8 @@
             <div>
               <div class="feature-title">Idempotency 보장</div>
               <div class="feature-desc">
-                Strategy Pattern으로 4가지
-                상태(None/InProgress/Completed/Failed) 독립 처리.
-                X-Idempotency-Key, Redis TTL 24h
+                중복 요청과 재시도 상황에서도 동일한 응답이 여러 번 저장되지
+                않도록 상태 기반 처리 구조를 설계했습니다.
               </div>
             </div>
           </div>
@@ -1772,8 +2222,8 @@
             <div>
               <div class="feature-title">LLM 완전 추적</div>
               <div class="feature-desc">
-                OTel → OTLP → Langfuse 연동. Baggage로 비동기 컨텍스트 전파,
-                100% 샘플링
+                프롬프트·응답·지연시간을 추적 가능하게 구성해 운영 중 품질
+                문제와 지연 원인을 분석할 수 있도록 했습니다.
               </div>
             </div>
           </div>
@@ -1782,8 +2232,8 @@
             <div>
               <div class="feature-title">이중 캐시 메모리</div>
               <div class="feature-desc">
-                Redis L1(빠른 조회) + PostgreSQL L2(영구 저장). Spring AI
-                ChatMemoryRepository 인터페이스 직접 구현
+                Redis와 PostgreSQL에 대화 이력을 이중화해 응답 속도와 데이터
+                내구성을 함께 확보했습니다.
               </div>
             </div>
           </div>
@@ -1792,8 +2242,89 @@
             <div>
               <div class="feature-title">동적 프롬프트 관리</div>
               <div class="feature-desc">
-                Langfuse에서 런타임 프롬프트/모델 파라미터 조회. 코드 배포 없이
-                모델 동작 변경
+                프롬프트와 모델 파라미터를 외부에서 관리할 수 있도록 분리해,
+                배포 없이도 품질 개선과 실험을 반복할 수 있도록 했습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCREENSHOTS -->
+        <div class="screenshots-section">
+          <div class="screenshots-title">
+            화면 구성
+            <span
+              style="
+                font-size: 0.75rem;
+                font-weight: 400;
+                text-transform: none;
+                letter-spacing: 0;
+                color: var(--text-muted);
+                opacity: 0.55;
+              "
+              >&nbsp;— 사진을 클릭하면 크게 볼 수 있습니다.</span
+            >
+          </div>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-click-wrap" data-lightbox>
+                <img
+                  class="screenshot-img"
+                  src="./images/sse-chat.png"
+                  alt="SSE 스트리밍 채팅 메인 화면"
+                  loading="lazy"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>SSE 스트리밍 채팅</strong>
+                <p>
+                  토큰 단위 스트리밍으로 답변 생성 과정을 바로 보여주도록
+                  구현해, 사용자가 긴 응답도 더 빠르게 체감할 수 있도록
+                  했습니다. 또한 네트워크 끊김 시 재시도 구조를 적용해 실제
+                  서비스에서의 응답 안정성까지 고려했습니다.
+                </p>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-click-wrap" data-lightbox>
+                <img
+                  class="screenshot-img"
+                  src="./images/rag-result.png"
+                  alt="RAG 검색 결과"
+                  loading="lazy"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>Tool-based RAG 동작</strong>
+                <p>
+                  모든 채팅에 검색을 일괄 적용하지 않고, 프로젝트로 생성한
+                  채팅방에서만 벡터 검색 툴이 동작하도록 설계했습니다. 이를 통해
+                  일반 대화에서는 불필요한 검색 비용을 줄이고, 문서 기반 질의가
+                  필요한 경우에만 검색 결과를 활용해 더 정확한 답변을 제공할 수
+                  있도록 했습니다.
+                </p>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-click-wrap" data-lightbox>
+                <img
+                  class="screenshot-img"
+                  src="./images/langfuse-trace.png"
+                  alt="Langfuse 트레이스"
+                  loading="lazy"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>LLM 완전 추적</strong>
+                <p>
+                  프롬프트, 응답, 토큰 수, 지연시간을 추적 가능하게 구성해 운영
+                  중 품질 문제와 지연 원인을 분석할 수 있도록 했습니다. 이를
+                  통해 프롬프트 개선과 응답 품질 조정을 근거 기반으로 수행할 수
+                  있었습니다.
+                </p>
               </div>
             </div>
           </div>
@@ -2478,7 +3009,7 @@
 
         <!-- ADR ACCORDION -->
         <div class="adr-section">
-          <div class="adr-title">💡 주요 기술적 의사결정 (ADR)</div>
+          <div class="adr-title">주요 기술 의사결정 (ADR)</div>
 
           <div class="accordion-item">
             <button class="accordion-header" onclick="toggleAccordion(this)">
@@ -2662,7 +3193,7 @@
 
         <!-- TROUBLESHOOTING -->
         <div class="tech-decisions" style="margin-top: 1.5rem">
-          <div class="td-title">🐛 트러블슈팅</div>
+          <div class="adr-title">트러블슈팅</div>
           <div class="accordion-item">
             <button class="accordion-header" onclick="toggleAccordion(this)">
               <span
@@ -2773,7 +3304,7 @@
       <div class="project-card project-card-alt fade-in">
         <div class="project-header">
           <div class="project-title-group">
-            <h3>🖼️ AI Assistant Web</h3>
+            <h3>AI Assistant Web</h3>
             <p class="project-subtitle">
               Vue 3.5 · TypeScript 5.9 · Vite 7 · Tailwind CSS 4 · Shadcn-vue
             </p>
@@ -2785,13 +3316,16 @@
           </div>
         </div>
 
-        <div class="project-problem">
-          <strong>🎯 목적 :</strong>
-          백엔드 AI Assistant API와 연동하는 Vue 3 프론트엔드를 단독으로
-          구현했습니다. POST 기반 SSE 스트리밍 수신을 위해
-          <span class="code-inline">EventSource</span> 대신 Fetch API +
-          <span class="code-inline">ReadableStream</span>을 직접 사용했고, Pinia
-          없이 Composables 패턴으로 상태를 관리했습니다.
+        <div class="project-overview">
+          <div class="overview-item overview-goal">
+            <div class="overview-label">프로젝트 목적</div>
+            백엔드 AI Assistant API와 연동하는 Vue 3 프론트엔드를 단독으로
+            구현했습니다.
+          </div>
+        </div>
+
+        <div class="screenshots-section">
+          <div class="screenshots-title">핵심 설계 포인트</div>
         </div>
 
         <div class="fe-features">
@@ -2800,9 +3334,12 @@
             <div>
               <div class="feature-title">SSE 스트리밍 수신</div>
               <div class="feature-desc">
-                <span class="code-inline">ReadableStream</span> + 버퍼 누적
-                방식으로 서버 토큰 스트림 파싱. 클라이언트 재시도 시 동일
-                Idempotency Key 재사용
+                POST 기반 SSE 스트리밍을 처리하기 위해
+                <span class="code-inline">EventSource</span> 대신 Fetch API +
+                <span class="code-inline">ReadableStream</span>을 직접
+                사용했습니다. 이를 통해 서버 토큰 스트림을 실시간으로 반영할 수
+                있었고, 재시도 시에도 동일한 Idempotency Key를 재사용해 안정적인
+                스트리밍 경험을 구현했습니다.
               </div>
             </div>
           </div>
@@ -2811,10 +3348,10 @@
             <div>
               <div class="feature-title">Composables 상태 관리</div>
               <div class="feature-desc">
-                Pinia 없이 <span class="code-inline">useChatState</span>,
-                <span class="code-inline">useAuth</span>,
-                <span class="code-inline">useDashboardData</span> 등 Composable
-                패턴으로 관심사 분리
+                전역 스토어를 도입하기보다, 채팅·인증·대시보드처럼 관심사별로
+                Composable을 분리해 상태를 관리했습니다. 이를 통해 Pinia 없이도
+                구조를 단순하게 유지하면서, 기능별 책임을 명확히 나눌 수 있도록
+                했습니다.
               </div>
             </div>
           </div>
@@ -2823,9 +3360,10 @@
             <div>
               <div class="feature-title">AI 사용 대시보드</div>
               <div class="feature-desc">
-                Langfuse 통계 API 연동.
-                <span class="code-inline">@unovis/vue</span>로 일별
-                사용량·비용·모델 점유율 차트 시각화
+                AI 기능은 구현보다 운영 지표를 확인할 수 있어야 한다고
+                판단했습니다. Langfuse 통계 API를 연동해 사용량, 비용, 모델별
+                점유율을 시각화했고, 이를 통해 AI 기능 운영 상태를 한눈에 확인할
+                수 있도록 했습니다.
               </div>
             </div>
           </div>
@@ -2834,8 +3372,11 @@
             <div>
               <div class="feature-title">Vue Router 없는 SPA</div>
               <div class="feature-desc">
-                <span class="code-inline">currentView ref</span>로 chat /
-                dashboard / project / pricing 뷰 전환. 불필요한 번들 크기 최소화
+                프로젝트 규모에 비해 라우터가 과하다고 판단해
+                <span class="code-inline">currentView ref</span> 기반으로 화면
+                전환을 직접 설계했습니다. 이를 통해 chat, dashboard, project,
+                pricing 화면을 단순하게 전환하면서 불필요한 번들 크기와 구조
+                복잡도를 줄였습니다.
               </div>
             </div>
           </div>
@@ -2844,19 +3385,102 @@
             <div>
               <div class="feature-title">마크다운 렌더링</div>
               <div class="feature-desc">
-                AI 응답을 <span class="code-inline">markdown-it</span>으로
-                실시간 파싱·렌더링. 코드블록, 표, 목록 지원
+                AI 응답은 코드블록, 표, 목록이 자주 포함돼 단순 텍스트
+                출력만으로는 가독성이 떨어졌습니다.
+                <span class="code-inline">markdown-it</span>으로 실시간
+                렌더링되도록 구현해, 스트리밍 중에도 답변 내용을 더 쉽게 읽고
+                활용할 수 있도록 했습니다.
               </div>
             </div>
           </div>
           <div class="fe-feature-item">
             <div class="feature-icon">🌗</div>
             <div>
-              <div class="feature-title">다크/라이트 테마</div>
+              <div class="feature-title">
+                프로젝트 단위 채팅 및 대화 이력 관리
+              </div>
               <div class="feature-desc">
-                <span class="code-inline">useTheme</span> composable +
-                <span class="code-inline">@vueuse/core</span>로 OS 설정 감지 및
-                사용자 토글 지원
+                일반 대화와 문서 기반 질의를 분리하기 위해 프로젝트 단위 채팅
+                구조를 도입했습니다. 이를 통해 프로젝트별로 독립된 컨텍스트와
+                최근 대화 이력을 유지할 수 있게 했고, AI 기능을 단발성 호출이
+                아닌 실제 서비스형 경험으로 확장했습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCREENSHOTS -->
+        <div class="screenshots-section">
+          <div class="screenshots-title">
+            화면 구성
+            <span
+              style="
+                font-size: 0.75rem;
+                font-weight: 400;
+                text-transform: none;
+                letter-spacing: 0;
+                color: var(--text-muted);
+                opacity: 0.55;
+              "
+              >&nbsp;— 사진을 클릭하면 크게 볼 수 있습니다.</span
+            >
+          </div>
+          <div class="screenshots-grid">
+            <div class="screenshot-item" data-lightbox>
+              <div class="screenshot-click-wrap">
+                <img
+                  class="screenshot-img"
+                  src="./images/chat-list.png"
+                  alt="프로젝트 단위 채팅 및 대화 이력 관리 화면"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>프로젝트 단위 채팅 및 대화 이력 관리</strong>
+                <p>
+                  일반 대화와 문서 기반 질의를 분리하기 위해 프로젝트 단위 채팅
+                  구조를 도입했습니다. 프로젝트별로 독립된 컨텍스트와 최근 대화
+                  이력을 유지하도록 구성해, AI 기능을 단발성 호출이 아닌 실제
+                  서비스형 경험으로 확장했습니다.
+                </p>
+              </div>
+            </div>
+            <div class="screenshot-item" data-lightbox>
+              <div class="screenshot-click-wrap">
+                <img
+                  class="screenshot-img"
+                  src="./images/dashboard.png"
+                  alt="AI 사용 대시보드"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>AI 사용 대시보드</strong>
+                <p>
+                  AI 기능은 붙이는 것보다 운영 중 사용량과 비용을 계속 확인할 수
+                  있어야 한다고 생각했습니다. Langfuse 통계 API를 연동해 일별
+                  사용량, 비용, 모델별 점유율을 시각화했고, 이를 통해 운영
+                  지표를 한눈에 확인할 수 있도록 구현했습니다.
+                </p>
+              </div>
+            </div>
+            <div class="screenshot-item" data-lightbox>
+              <div class="screenshot-click-wrap">
+                <img
+                  class="screenshot-img"
+                  src="./images/markdown.png"
+                  alt="AI 응답 마크다운 렌더링"
+                />
+                <div class="screenshot-hover-label">🔍 크게보기</div>
+              </div>
+              <div class="screenshot-caption">
+                <strong>AI 응답 마크다운 렌더링</strong>
+                <p>
+                  AI 응답은 코드블록, 표, 목록이 자주 포함되기 때문에 단순
+                  텍스트 출력만으로는 가독성이 떨어졌습니다. markdown-it으로
+                  스트리밍 중에도 실시간 렌더링되도록 구현해, 내용을 더 쉽게
+                  읽고 활용할 수 있도록 했습니다.
+                </p>
               </div>
             </div>
           </div>
@@ -2864,7 +3488,7 @@
 
         <!-- Tech decisions -->
         <div class="adr-section">
-          <div class="adr-title">💡 주요 기술적 의사결정</div>
+          <div class="adr-title">주요 기술 의사결정(ADR)</div>
 
           <div class="accordion-item">
             <button class="accordion-header" onclick="toggleAccordion(this)">
@@ -2954,6 +3578,74 @@
           </div>
         </div>
       </div>
+
+      <!-- 개인 프로젝트 스택 (백엔드 + 프론트 카드 하단) -->
+      <div class="skill-group skill-group-below-cards fade-in">
+        <h3 class="skill-group-title">개인 프로젝트 스택</h3>
+        <p class="skill-group-desc">
+          AI 어시스턴트 플랫폼(백엔드 · 프론트) 설계·구현 시 사용한 기술
+        </p>
+        <div class="skills-grid">
+          <div class="skill-category">
+            <div class="skill-category-title">Backend</div>
+            <div class="skill-list">
+              <span class="skill-tag primary">Spring Boot 3.5</span>
+              <span class="skill-tag primary">Java 21</span>
+              <span class="skill-tag">Spring AI 1.1.2</span>
+              <span class="skill-tag">Spring Data JPA</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <div class="skill-category-title">AI / LLM</div>
+            <div class="skill-list">
+              <span class="skill-tag primary">Ollama</span>
+              <span class="skill-tag primary">RAG (Tool-based)</span>
+              <span class="skill-tag primary">pgvector</span>
+              <span class="skill-tag">Spring AI ChatClient</span>
+              <span class="skill-tag">Embedding · SSE Streaming</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <div class="skill-category-title">Data Store</div>
+            <div class="skill-list">
+              <span class="skill-tag primary">PostgreSQL</span>
+              <span class="skill-tag primary">Redis</span>
+              <span class="skill-tag">pgvector</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <div class="skill-category-title">Observability</div>
+            <div class="skill-list">
+              <span class="skill-tag primary">OpenTelemetry</span>
+              <span class="skill-tag primary">Langfuse</span>
+              <span class="skill-tag">OTLP</span>
+              <span class="skill-tag">Micrometer</span>
+              <span class="skill-tag">Spring Actuator</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <div class="skill-category-title">Infra</div>
+            <div class="skill-list">
+              <span class="skill-tag">Docker</span>
+              <span class="skill-tag">Docker Compose</span>
+              <span class="skill-tag">Gradle</span>
+              <span class="skill-tag">Git</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <div class="skill-category-title">Frontend</div>
+            <div class="skill-list">
+              <span class="skill-tag primary">Vue 3</span>
+              <span class="skill-tag primary">TypeScript</span>
+              <span class="skill-tag primary">Tailwind CSS 4</span>
+              <span class="skill-tag">Vite 7</span>
+              <span class="skill-tag">Shadcn-vue</span>
+              <span class="skill-tag">SSE (ReadableStream)</span>
+              <span class="skill-tag">markdown-it</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- CONTACT -->
@@ -3024,14 +3716,28 @@
       <p>© 2025 Kade Jeon · Built with HTML/CSS/JS · No framework, no CDN</p>
     </footer>
 
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <div class="lightbox-content" onclick="event.stopPropagation()">
+        <button
+          type="button"
+          class="lightbox-close"
+          id="lightbox-close"
+          aria-label="닫기"
+        >
+          ×
+        </button>
+        <img src="" alt="" id="lightbox-img" />
+      </div>
+    </div>
+
     <script>
       // ===== TYPING ANIMATION =====
       const phrases = [
-        "Backend Developer",
-        "Cloud Engineer",
-        "Full-Stack Developer",
-        "AI Integration Specialist",
-        "Spring Boot Expert",
+        "운영형 백엔드 개발자",
+        "레거시 구조 개선",
+        "운영 가능한 AI 통합",
+        "구조 설계 · 기능 구현",
       ];
       let phraseIdx = 0,
         charIdx = 0,
@@ -3084,6 +3790,40 @@
           .forEach((i) => i.classList.remove("open"));
         if (!isOpen) item.classList.add("open");
       }
+
+      // ===== LIGHTBOX =====
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      const lightboxClose = document.getElementById("lightbox-close");
+
+      function openLightbox(src, alt) {
+        lightboxImg.src = src;
+        lightboxImg.alt = alt || "";
+        lightbox.classList.add("is-open");
+        lightbox.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove("is-open");
+        lightbox.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      }
+
+      document.querySelectorAll("[data-lightbox]").forEach((wrap) => {
+        wrap.addEventListener("click", () => {
+          const img = wrap.querySelector("img.screenshot-img");
+          if (img && img.src) openLightbox(img.src, img.alt);
+        });
+      });
+
+      lightbox.addEventListener("click", closeLightbox);
+      lightboxClose.addEventListener("click", closeLightbox);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && lightbox.classList.contains("is-open"))
+          closeLightbox();
+      });
 
       // ===== ACTIVE NAV LINK =====
       const sections = document.querySelectorAll("section[id]");
